@@ -19,7 +19,7 @@ export default class ScaleHandlers extends Component {
       selectedHandler: '',
     };
 
-    this.wasm_img = imgObj.getImgObj();
+    this.wasm_img = imgObj.get_wasm_img();
     this.scaleRegionInfo = null;
 
     this.canvas = document.getElementById('canvas');

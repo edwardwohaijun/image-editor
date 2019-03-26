@@ -19,11 +19,11 @@ pub struct Image {
     width: u32,
     height: u32,
     pixels: Vec<u8>,
-    /*
+
     pixels_bk: Vec<u8>,
     width_bk: u32,
     height_bk: u32,
-    */
+
     dct: (Vec<f64>, Vec<f64>),
 }
 
@@ -34,12 +34,12 @@ impl Image {
         Image {
             width: w,
             height: h,
-            pixels: buf,
-            /*
-            pixels_bk: buf.clone(),
+            pixels: buf.clone(),
+
+            pixels_bk: buf,
             width_bk: w,
             height_bk: h,
-            */
+
             dct,
         }
     }
@@ -48,15 +48,15 @@ impl Image {
     // there is an expensive initialise_DCT() call in ctor, I don't want to call it every time a new Image obj is created(open/fetch a new img file), hence the reuse
     // Although DCT is not used in this impl.
     pub fn reuse(&mut self, w: u32, h: u32, buf: Vec<u8>) {
-        self.pixels = buf;
+        self.pixels = buf.clone();
         self.width = w;
         self.height = h;
 
-        /*
-        self.pixels_bk = buf.clone();
+
+        self.pixels_bk = buf;
         self.width_bk = w;
         self.height_bk = h;
-        */
+
     }
 
     pub fn pixels(&self) -> *const u8 {
@@ -65,7 +65,6 @@ impl Image {
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
 
-    /*
     pub fn apply_change(&mut self) {
         self.pixels_bk = self.pixels.clone();
         self.width_bk = self.width;
@@ -77,7 +76,6 @@ impl Image {
         self.width = self.width_bk;
         self.height = self.height_bk;
     }
-    */
 
     pub fn show_pixels(&self) -> String{
         // println!("all pixels: {:?}", self.pixels)

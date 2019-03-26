@@ -7,7 +7,7 @@ import icons from './buttonIcons';
 export default class Rotate extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
+    this.imgObj = imgObj.get_wasm_img();
     this.state = {
       //selected
     }

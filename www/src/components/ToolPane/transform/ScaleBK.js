@@ -6,7 +6,7 @@ import React, {Component} from 'react';
 export default class Scale extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
+    this.imgObj = imgObj.get_wasm_img();
     this.imgWidth = this.imgObj.width(); // these 2 values are accessed frequently, but got changed only after clicking apply btn,
     this.imgHeight = this.imgObj.height(); // and changed values can be calculated in JS land, no need to access wasm.
     this.scaleRegion = null;

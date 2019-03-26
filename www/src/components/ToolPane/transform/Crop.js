@@ -6,9 +6,9 @@ import React, {Component} from 'react';
 export default class Crop extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
-    this.imgWidth = this.imgObj.width();
-    this.imgHeight = this.imgObj.height();
+    this.wasm_img = imgObj.get_wasm_img();
+    this.imgWidth = this.wasm_img.width();
+    this.imgHeight = this.wasm_img.height();
 
     this.cropRegion = null;
     this.state = {
@@ -25,7 +25,7 @@ export default class Crop extends Component {
     let x = parseInt(regionInfoEle[2].innerText);
     let y = parseInt(regionInfoEle[3].innerText);
     // todo: check validity of above 4 values before passing to wasm.
-    this.imgObj.crop(x, y, w, h);
+    this.wasm_img.crop(x, y, w, h);
     this.props.onSelectTool(''); // to unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
     this.props.redraw();
   };

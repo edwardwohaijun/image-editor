@@ -29,7 +29,7 @@ class Main extends Component {
   onSelectTool = id => this.setState({selectedTool: id});
 
   resizeCanvas = autoFit => { // "autoShrink: true" fit canvas into container without scrollbar
-    let wasm_img = imgObj.getImgObj();
+    let wasm_img = imgObj.get_wasm_img();
     let imgWidth = wasm_img.width();
     let imgHeight = wasm_img.height();
 
@@ -87,9 +87,6 @@ class Main extends Component {
   componentDidMount = () => { };
   componentDidUpdate = () => { };
 
-  // open: local computer, remote URL, this site /img1.jpg, /img2.jpg, ...
-  // todo: add a 3rd option: URL
-  // need to clear the crop/scale handlers
   loadImage = src => {
     if (!src) {
       src = this.imgSrc
@@ -134,9 +131,8 @@ class Main extends Component {
     const w = img.naturalWidth;
     const h = img.naturalHeight;
 
-
     imgObj.imgBuff = img;
-    let wasm_img = imgObj.getImgObj();
+    let wasm_img = imgObj.get_wasm_img();
     wasm_img.reuse(w, h, new Uint8Array(2)); // resizeCanvas call need width/height in wasm_img, but the img data(3rd arg) is not ready, just pass a dummy data to it.
     this.resizeCanvas(true); // this must be called when wasm_img is ready.
 

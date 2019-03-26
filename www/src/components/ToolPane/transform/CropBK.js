@@ -6,7 +6,7 @@ import React, {Component} from 'react';
 export default class Crop extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
+    this.imgObj = imgObj.get_wasm_img();
     this.cropRegion = null;
     this.state = {
     }

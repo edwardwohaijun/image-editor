@@ -46,7 +46,7 @@ class ToolPropList extends Component {
 
   // after each operation performed by wasm, we need to redraw the canvas with data read from Rust
   redraw = reposition => { // todo: 最好pass一个arg, indicating whether ratio need to be applied, most operations like: filter/color don't change ratio
-    let wasm_img = imgObj.getImgObj();
+    let wasm_img = imgObj.get_wasm_img();
     let w = wasm_img.width();
     let h = wasm_img.height();
     let pixelPtr = wasm_img.pixels();
@@ -58,6 +58,7 @@ class ToolPropList extends Component {
           let canvas = document.getElementById('canvas');
           canvas.width = w * ratio;
           canvas.height = h * ratio;
+          console.log('inside redraw, canvas w/h: ', w , '/', h, '/', ratio);
           let ctx = canvas.getContext('2d');
           ctx.scale(ratio, ratio);
           ctx.drawImage(img, 0, 0);

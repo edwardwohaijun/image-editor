@@ -1,31 +1,28 @@
 import imgObj from '../../common/imgObj'
+//import canvasBK from '../../common/canvasBK';
 import React, {Component} from 'react';
 
 export default class Scale extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
-    this.imgWidth = this.imgObj.width(); // these 2 values are accessed frequently, but got changed only after clicking apply btn,
-    this.imgHeight = this.imgObj.height(); // and changed values can be calculated in JS land, no need to access wasm.
+    this.wasm_img = imgObj.get_wasm_img();
+    this.imgWidth = this.wasm_img.width(); // these 2 values are accessed frequently, but got changed only after clicking apply btn,
+    this.imgHeight = this.wasm_img.height(); // and changed values can be calculated in JS land, no need to access wasm.
     this.scaleRegion = null;
-    this.changeApplied = false;
+    this.changeApplied = true; // when component get mounted, nothing changed yet, which, logically, is equal to 'change applied'
 
-    this.state = {
-      scaleFactor: 100
-    }
+    this.state = {scaleFactor: 100} // use integer to get rid of rounding error when shown on page.
   }
 
   componentDidMount = () => { };
   componentDidUpdate = prevProps => { };
 
-  // todo: check whether changes have been applied, if not, call imgObj.discard(), and redraw();
   componentWillUnmount = () => {
-    console.log('unmouting')
-  };
-
-  discardChange = () => { // calling redraw, 但页面上的 w/h/ratio都要恢复original, 但如果此刻都要 unmount了, 恢复也必要吗?
-
-
+    console.log('unmouting');
+    if (!this.changeApplied) {
+      this.wasm_img.discard_change();
+      this.props.redraw();
+    }
   };
 
   onScaleChange = evt => {
@@ -50,19 +47,20 @@ export default class Scale extends Component {
     if (this.state.scaleFactor === scaleFactor) {
       return
     }
-    this.setState({scaleFactor})
+
+    console.log('scaling...', scaleFactor / 100);
+    this.wasm_img.scale(scaleFactor / 100);
+    this.props.redraw();
+    this.setState({scaleFactor});
+    this.changeApplied = false;
   };
 
   onApply = evt => { // todo: parse 4 values to integer before passing to scale();
-    let regionInfoEle = this.scaleRegion.getElementsByClassName('canvas-handler-region-info');
-    let w = parseInt(regionInfoEle[0].innerText); // only block element support innerText, like div
-    let h = parseInt(regionInfoEle[1].innerText);
-    let ratio = parseInt(regionInfoEle[2].innerText);
-    console.log('xy/ratio from DOM: ', w, '/', h, '/', ratio);
-    // todo: check validity before passing to wasm
-    // this.imgObj.scale(0.5);
-    this.props.onSelectTool(''); // passing empty string will unmount myself
-    this.props.redraw();
+    this.wasm_img.apply_change();
+    this.imgWidth = this.wasm_img.width();
+    this.imgHeight = this.wasm_img.height();
+    this.setState({scaleFactor: 100});
+    this.changeApplied = true
   };
 
   render() {

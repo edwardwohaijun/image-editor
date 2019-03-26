@@ -7,7 +7,7 @@ import icons from './buttonIcons';
 export default class Rotate extends Component {
   constructor(props) {
     super(props);
-    this.imgObj = imgObj.getImgObj();
+    this.wasm_img = imgObj.get_wasm_img();
     this.state = {
       //selected
     }
@@ -19,10 +19,10 @@ export default class Rotate extends Component {
 
   onClick = evt => {
     switch (evt.target.id) {
-      case 'btn_rotate_counter_clockwise': this.imgObj.rotate(false); break;
-      case 'btn_rotate_clockwise': this.imgObj.rotate(true); break;
-      case 'btn_flip_h': this.imgObj.flip_h(); break;
-      case 'btn_flip_v': this.imgObj.flip_v(); break;
+      case 'btn_rotate_counter_clockwise': this.wasm_img.rotate(false); break;
+      case 'btn_rotate_clockwise': this.wasm_img.rotate(true); break;
+      case 'btn_flip_h': this.wasm_img.flip_h(); break;
+      case 'btn_flip_v': this.wasm_img.flip_v(); break;
     }
     this.props.redraw()
   };
