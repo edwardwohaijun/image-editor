@@ -1,0 +1,282 @@
+html, body { margin:0; padding:0; overflow:hidden }
+
+body {
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+    color: #00B7FF;
+}
+
+.resize-view-btn {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+.resize-view-btn:focus {
+    outline: none;
+}
+
+.scrollbar {
+    overflow: auto;
+}
+.scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    background-color: #F5F5F5;
+}
+.scrollbar::-webkit-scrollbar-thumb {
+    background-color: #CCC;
+}
+.scrollbar::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    background-color: #F5F5F5;
+}
+
+#tool-prop-list {
+    transition: transform 0.25s ease-out;
+}
+
+#canvas-parent {
+    transition: transform 0.25s ease-out;
+}
+
+.editor-header {
+    color: #CCC;
+    height: 42px;
+    background-color: #3f414c;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    cursor: pointer;
+    margin-bottom: 18px;
+}
+.editor-header span {
+    pointer-events: none; /* to prevent this element from capturing click evt */
+}
+.editor-header-wrapper {
+    /*
+    display: flex;
+    align-items: center;
+    */
+    margin-bottom: 20px;
+}
+
+.svg-down-arrow {
+    /* transition: transform 0.5s; */
+    margin-right: 8px;
+}
+
+.tool-icon {
+    display: block;
+    width: 56px;
+    padding: .75rem 1.125rem;
+    background-color: #3f414c;
+    color: #ededed;
+    border: none;
+    cursor: pointer;
+}
+.tool-icon:focus {
+    outline: none;
+}
+
+/*
+.editor-item-label {
+    color: #FFF;
+    margin-bottom: 8px;
+}
+*/
+
+/* buttons like: flip-left/right, rotate-clockwise */
+.editor-btn, #editor-goback-btn {
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    cursor: pointer;
+}
+#editor-goback-btn {
+    border: none;
+}
+.editor-btn {
+    border: 1px solid #373842;
+}
+.editor-btn:hover {
+    border: 1px solid #ccc;
+}
+.editor-btn:focus, #editor-goback-btn:focus {
+    outline: none;
+}
+/*
+http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.html
+*/
+
+.primary-btn {
+    width: 80px;
+    height: 36px;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.primary-btn:focus {
+    outline: none;
+}
+.apply-btn {
+    background-color: #387dcd;
+}
+.cancel-btn {
+    background-color: #3f414c;
+}
+
+.canvas-handler-region-info {
+    color: #ededed;
+    margin-top: 8px;
+    padding-left: 4px;
+    width: 80px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #373842;
+}
+
+.img-file-handler-btn {
+    color: #ededed;
+    background-color: transparent;
+    border: 1px solid #373842;
+    font-size: 16px;
+    cursor: pointer;
+}
+.img-file-handler-btn:focus {
+    outline: none;
+}
+
+/*
+.open-img-file-wrapper input {
+    width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+*/
+.clickable {
+    cursor: pointer;
+}
+
+
+.dropdown-menu {
+    position: absolute;
+    margin-top: 40px;
+    color: #ededed;
+    list-style: none;
+    padding-left: 0;
+    border-radius: 3px;
+    background-color: #25262d;
+    filter: drop-shadow(0 0 .5rem rgba(0,0,0,.5));
+    top: 8px;
+    left: -8px;
+    width: 260px;
+}
+.dropdown-menu li {
+    margin: 16px;
+}
+.dropdown-menu #img-url:focus {
+    outline: none;
+}
+
+input[type=range]{
+    -webkit-appearance: none;
+    border: none;
+    width: 180px;
+    cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 180px;
+    height: 5px;
+    background: #ddd;
+    border: none;
+    border-radius: 1px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #347bd0;
+    margin-top: -7px;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+    background: #ccc;
+}
+
+input[type=range]::-moz-range-track {
+    width: 180px;
+    height: 5px;
+    background: #ddd;
+    border: none;
+    border-radius: 1px;
+}
+
+input[type=range]::-moz-range-thumb {
+    border: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #347bd0;
+}
+
+/*hide the outline behind the border*/
+input[type=range]:-moz-focusring{
+    outline: 1px solid white;
+    outline-offset: -1px;
+}
+
+input[type=range]:focus::-moz-range-track {
+    background: #ccc;
+}
+
+input[type=range]::-ms-track {
+    width: 180px;
+    height: 5px;
+
+    /*remove bg colour from the track, we'll use ms-fill-lower and ms-fill-upper instead */
+    background: transparent;
+
+    /*leave room for the larger thumb to overflow with a transparent border */
+    border-color: transparent;
+    border-width: 6px 0;
+
+    /*remove default tick marks*/
+    color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+    background: #347bd0;
+    border-radius: 1px;
+}
+input[type=range]::-ms-fill-upper {
+    background: #ddd;
+    border-radius: 1px;
+}
+input[type=range]::-ms-thumb {
+    border: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #347bd0;
+}
+input[type=range]:focus::-ms-fill-lower {
+    background: #347bd0;
+}
+input[type=range]:focus::-ms-fill-upper {
+    background: #ccc;
+}
