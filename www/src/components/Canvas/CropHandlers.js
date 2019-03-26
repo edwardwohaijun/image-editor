@@ -48,8 +48,8 @@ export default class CropHandlers extends Component {
     let ratio = this.props.zoomRatio;
     w.innerText = Math.round(this.handlerWidth / ratio) + ' px';
     h.innerText = Math.round(this.handlerHeight / ratio) + ' px';
-    x.innerText = this.handlerX - 9;
-    y.innerText = this.handlerY - 9;
+    x.innerText = Math.round((this.handlerX - 9) / ratio);
+    y.innerText = Math.round((this.handlerY - 9) / ratio);
   };
 
   componentDidMount = () => {

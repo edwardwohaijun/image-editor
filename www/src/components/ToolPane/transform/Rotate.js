@@ -13,9 +13,17 @@ export default class Rotate extends Component {
     }
   }
 
-  componentDidMount = () => { };
+  /*
+  componentDidMount = () => {};
   componentDidUpdate = prevProps => { };
-  componentWillUnmount = () => { };
+  */
+
+  // rotate 90 is an reversible operation, no need to call it in onClick handler,
+  // I don't even bother adding an 'apply' button,
+  // just apply the changes before unmount.
+  componentWillUnmount = () => {
+    this.wasm_img.apply_change();
+  };
 
   onClick = evt => {
     switch (evt.target.id) {

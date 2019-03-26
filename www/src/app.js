@@ -18,7 +18,10 @@ import './style.css';
 
 let initialState = {
     imgStat: fromJS({ // main() state 中也有个 imgStat(存放img的size, w/h等), 重名不好. 本例直接: viewRate: 0 即可.
-      zoomRatio: 0 // range: [0.2, 4]. 0 is not a valid ratio, but canvas redraw only when this value change from 0 to a valid value
+      zoomRatio: 0, // range: [0.2, 4]. 0 is not a valid ratio, but canvas redraw only when this value change from 0 to a valid value
+      width: 0,
+      height: 0,
+      // size: 0,
     }),
 
     cropHandlersVisible: false, // the 8 points around canvas, with which you can scale up/down, set region to crop. For other operations, hide it

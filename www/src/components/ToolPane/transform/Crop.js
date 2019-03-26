@@ -15,6 +15,7 @@ export default class Crop extends Component {
     }
   }
 
+  // no need to call wasm_img.discard_change(), because moving cropRegion(just a SVG) has no impact on wasm_img.
   componentDidMount = () => this.props.showCropHandlers(true);
   componentWillUnmount = () => this.props.showCropHandlers(false);
 
@@ -26,6 +27,7 @@ export default class Crop extends Component {
     let y = parseInt(regionInfoEle[3].innerText);
     // todo: check validity of above 4 values before passing to wasm.
     this.wasm_img.crop(x, y, w, h);
+    this.wasm_img.apply_change();
     this.props.onSelectTool(''); // to unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
     this.props.redraw();
   };
