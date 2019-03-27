@@ -9,7 +9,7 @@ impl Image {
         let (w, h) = (self.width as usize, self.height as usize);
 
         let mut rows: Vec<&mut [u8]> = self.pixels.chunks_mut(w * 4).collect();
-        let mut tmp_row= vec![0_u8; (w * 4)];
+        let mut tmp_row= vec![0_u8; w * 4];
         let mut tmp_row_ref = tmp_row.as_mut_slice();
         for row_idx in 0..(h/2) {
             rows[row_idx].swap_with_slice(tmp_row_ref);

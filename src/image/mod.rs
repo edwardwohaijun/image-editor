@@ -13,6 +13,7 @@ mod set_brightness;
 mod crop;
 mod flip;
 mod rgb_to_grayscale;
+mod rgb_hsi_convert;
 
 #[wasm_bindgen]
 pub struct Image {

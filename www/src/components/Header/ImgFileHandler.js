@@ -69,7 +69,6 @@ class Open extends Component {
     // todo: check url validity, if not valid, disable the 'Go' button.
     if (evt.key === 'Enter') {
       this.onGoToURL(evt);
-      console.log('entered')
     }
   };
 
