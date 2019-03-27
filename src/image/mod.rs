@@ -52,7 +52,6 @@ impl Image {
         self.width = w;
         self.height = h;
 
-
         self.pixels_bk = buf;
         self.width_bk = w;
         self.height_bk = h;
@@ -64,6 +63,8 @@ impl Image {
     }
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
+    pub fn width_bk(&self) -> u32 { self.width_bk }
+    pub fn height_bk(&self) -> u32 { self.height_bk }
 
     pub fn apply_change(&mut self) {
         self.pixels_bk = self.pixels.clone();

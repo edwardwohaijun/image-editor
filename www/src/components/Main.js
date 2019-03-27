@@ -144,7 +144,6 @@ class Main extends Component {
     wasm_img.reuse(w, h, imgData.data);
   };
 
-
   render() {
     let canvasParentStyle = {width: '100%', backgroundColor: '#1e2025'};
     canvasParentStyle.transform = this.state.selectedTool == null ? 'translate(0px, 0px)' : 'translate(250px, 0px)';
