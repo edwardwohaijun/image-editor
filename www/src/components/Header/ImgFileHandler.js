@@ -51,7 +51,10 @@ class Open extends Component {
 
   // to allow to select the same file, otherwise onChange won't get triggered
   onFileClick = evt => evt.target.value = null;
-  onFileChange = evt => this.props.loadImage(evt.target.files[0]);
+  onFileChange = evt => {
+    this.setState({dropdownVisible: false});
+    this.props.loadImage(evt.target.files[0])
+  };
 
   onGoToURL = evt => {
     console.log('evt in gotourl: ', evt.target.parentElement);
@@ -126,7 +129,7 @@ class Save extends Component {
         .then(img => {
           let ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
-          canvas.toBlob(blob => {
+          canvas.toBlob(blob => { // toDataURL failed for big canvas
             let link = document.createElement('a');
             link.download = "download.png";
             link.href = URL.createObjectURL(blob);

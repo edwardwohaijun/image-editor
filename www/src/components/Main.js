@@ -79,14 +79,13 @@ class Main extends Component {
   componentDidMount = () => { };
   componentDidUpdate = () => { };
 
-  loadImage = src => {
+  loadImage = src => { // todo: use fetch(), then read as blob, rather than base64
     if (!src) {
       src = this.imgSrc
     }
     let srcType = 'url'; // todo: check url validity
     // even valid url may fail to get a response, where to call err handler?
 
-    // todo: use fetch(), current impl use base64 as img.src
     // const imgBlob = await fetch(src).then(resp => resp.blob());
     // const img = await createImageBitmap(imgBlob); // imgBigmap only has width and height props.
     if (src instanceof File) {
