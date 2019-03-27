@@ -6,26 +6,18 @@ import Footer from './Footer';
 import Canvas from './Canvas/index'
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
-import {setZoomRatio} from "../actions";
+import {setZoomRatio, setWidthHeight} from "../actions";
 
 class Main extends Component {
   constructor(props) {
     super(props);
     this.state = {
       selectedTool: null,
-      imgStat: {
-        src: null,
-        width: 0,
-        height: 0,
-        // name: '',
-        size: 0,
-      },
     };
     this.imgSrc = '/img/wonder-woman.jpg';
     // this.imgSrc = '/img/len_full.jpg';
   }
 
-  updateImgStat = stat => this.setState({imgStat: stat});
   onSelectTool = id => this.setState({selectedTool: id});
 
   resizeCanvas = autoFit => { // "autoShrink: true" fit canvas into container without scrollbar
@@ -108,6 +100,7 @@ class Main extends Component {
     if (srcType === 'url') {
       img.src = src;
       img.onload = () => { // img is base64, consider using fetch to get the blob, then feed directly to wasm
+        this.props.setWidthHeight({width: img.naturalWidth, height: img.naturalHeight});
         this.drawImage(img);
         this.imgSrc = src;
       };
@@ -118,6 +111,7 @@ class Main extends Component {
         img.src = evt.target.result;
       };
       img.onload = () => {
+        this.props.setWidthHeight({width: img.naturalWidth, height: img.naturalHeight});
         this.drawImage(img);
         this.imgSrc = src
       }
@@ -173,5 +167,5 @@ const mapStateToProps = state => ({
       cropHandlersVisible: state.cropHandlersVisible,
       //scaleHandlersVisible: state.scaleHandlersVisible
 });
-const mapDispatchToProps = dispatch => bindActionCreators({setZoomRatio}, dispatch);
+const mapDispatchToProps = dispatch => bindActionCreators({setZoomRatio, setWidthHeight}, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(Main);

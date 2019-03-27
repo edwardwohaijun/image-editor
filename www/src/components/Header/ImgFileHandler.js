@@ -23,7 +23,7 @@ export default class ImgFileHandler extends Component {
 }
 
 const BtnWrapperStyle = {height: '36px', display: 'flex', alignItems: 'center', position: 'relative'};
-
+// todo: after opening an img, close the dropdown menu
 class Open extends Component {
   constructor(props) {
     super(props);

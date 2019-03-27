@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {connect} from "react-redux";
 
 const circleImg = 'data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxOHB4IiBoZWlnaHQ9IjE4cHgiIHZlcnNpb249IjEuMSI+PGNpcmNsZSBjeD0iOSIgY3k9IjkiIHI9IjUiIHN0cm9rZT0iI2ZmZiIgZmlsbD0iIzAwN2RmYyIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+';
 const handlerCommonProps = {
@@ -9,7 +10,7 @@ const handlerCommonProps = {
   height: '18',
 };
 
-export default class CropHandlers extends Component {
+class CropHandlers extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -19,8 +20,8 @@ export default class CropHandlers extends Component {
     this.cropRegionInfo = null;
 
     this.canvas = document.getElementById('canvas');
-    this.canvasWidth = this.canvas.width;
-    this.canvasHeight = this.canvas.height;
+    this.canvasWidth = Math.round(props.imgWidth * props.zoomRatio); // this.canvas.width;
+    this.canvasHeight = Math.round(props.imgHeight * props.zoomRatio); // this.canvas.height;
     this.canvasBbox = this.canvas.getBoundingClientRect(); // canvas element already loaded when canvasHandler is loaded
     this.svg = null;
 
@@ -29,8 +30,8 @@ export default class CropHandlers extends Component {
     // The outer rect's position/width/height are fixed, inner rect can be moved/resize.
     this.handlerX = 9; // the top-left coordinate of inner rect. This coordinate is relative to parent svg, not to browser viewport
     this.handlerY = 9; // 9 is the imgHandler's radius, this value make 4 imgHandler's center sit right on the corner of the underlying canvas
-    this.handlerWidth = this.canvasBbox.width; // inner rect's width and height
-    this.handlerHeight = this.canvasBbox.height; // the default value is the same as the underlying canvas
+    this.handlerWidth = this.canvasWidth; // this.canvasBbox.width; // inner rect's width and height
+    this.handlerHeight = this.canvasHeight; // this.canvasBbox.height; // the default value is the same as the underlying canvas
     this.handlerMovingX = 0; // when a imgHandler's being dragged, MovingX/Y reflect their real-time position
     this.handlerMovingY = 0;
   }
@@ -224,8 +225,9 @@ export default class CropHandlers extends Component {
   };
 
   render() {
-    let width = this.canvasBbox.width;
-    let height = this.canvasBbox.height;
+
+    let width = this.handlerWidth; // this.canvasBbox.width;
+    let height = this.handlerHeight; // this.canvasBbox.height;
 
     let canvasLeft = this.canvas.style.left;
     let canvasTop = this.canvas.style.top;
@@ -233,13 +235,13 @@ export default class CropHandlers extends Component {
       position: 'absolute',
       left: (parseInt(canvasLeft) - 9 + 20) + 'px', // 9 is imgHandler radius, 20 is canvasElement's margin
       top: (parseInt(canvasTop) - 9 + 20) + 'px',
-      width: width + 18, // 18 is imgHandler diameter
-      height: height + 18,
+      width: this.canvasWidth + 18, // 18 is imgHandler diameter
+      height: this.canvasHeight + 18,
     };
 
     let pathAttribute = composePath( // when canvasHandler get mounted, its outerRect and innerRect are the same
         {x: 9, y: 9, width, height},
-        {x: 9, y: 9, width, height}
+        {x: 9, y: 9, width: this.canvasWidth, height: this.canvasHeight}
     );
 
     let path = <path d={pathAttribute} fill='#000' fillOpacity={0.6} strokeWidth={1}/>;
@@ -266,6 +268,15 @@ export default class CropHandlers extends Component {
         </svg>
     )}
 }
+
+
+const mapStateToProps = state => ({
+  imgWidth: state.imgStat.get('width'),
+  imgHeight: state.imgStat.get('height'),
+});
+// const mapDispatchToProps = dispatch => bindActionCreators({setWidthHeight}, dispatch);
+export default connect(mapStateToProps, null)(CropHandlers);
+
 
 const composePath = (outer, inner) => {
   let outerRect = 'M' + outer.x + ',' + outer.y + ' h' + outer.width + ' v' + outer.height + ' h-' + outer.width + ' z';

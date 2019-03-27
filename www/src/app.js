@@ -19,8 +19,8 @@ import './style.css';
 let initialState = {
     imgStat: fromJS({ // main() state 中也有个 imgStat(存放img的size, w/h等), 重名不好. 本例直接: viewRate: 0 即可.
       zoomRatio: 0, // range: [0.2, 4]. 0 is not a valid ratio, but canvas redraw only when this value change from 0 to a valid value
-      width: 0,
-      height: 0,
+      width: 0, // width/height can be read from wasm_img, but some width/height changing operations(like Scale) are too expensive,\
+      height: 0, // but I need the new width/height value immediately, so use this lightweight approach
       // size: 0,
     }),
 

@@ -2,13 +2,16 @@
 // scale up/down
 import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
+import {setWidthHeight} from "../../../actions";
+import {bindActionCreators} from "redux";
+import {connect} from "react-redux";
 
-export default class Crop extends Component {
+class Crop extends Component {
   constructor(props) {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
-    this.imgWidth = this.wasm_img.width();
-    this.imgHeight = this.wasm_img.height();
+    this.imgWidth = props.imgWidth; // this.wasm_img.width();
+    this.imgHeight = props.imgHeight; // this.wasm_img.height();
 
     this.cropRegion = null;
     this.state = {
@@ -25,9 +28,12 @@ export default class Crop extends Component {
     let h = parseInt(regionInfoEle[1].innerText);
     let x = parseInt(regionInfoEle[2].innerText);
     let y = parseInt(regionInfoEle[3].innerText);
+    this.props.setWidthHeight({width: w, height: h});
     // todo: check validity of above 4 values before passing to wasm.
     this.wasm_img.crop(x, y, w, h);
     this.wasm_img.apply_change();
+
+    // it's too complicated to re-calculate the new position of CropHandlers after crop, so I just unmount current component to hide CropHandler
     this.props.onSelectTool(''); // to unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
     this.props.redraw();
   };
@@ -70,3 +76,10 @@ export default class Crop extends Component {
         </div>
     )}
 }
+
+const mapStateToProps = state => ({
+  imgWidth: state.imgStat.get('width'),
+  imgHeight: state.imgStat.get('height'),
+});
+const mapDispatchToProps = dispatch => bindActionCreators({setWidthHeight}, dispatch);
+export default connect(mapStateToProps, mapDispatchToProps)(Crop);

@@ -1,13 +1,17 @@
 import imgObj from '../../common/imgObj'
 //import canvasBK from '../../common/canvasBK';
 import React, {Component} from 'react';
+import {setWidthHeight} from "../../../actions";
+import {bindActionCreators} from "redux";
+import {connect} from "react-redux";
 
-export default class Scale extends Component {
+// todo: to allow to scale up
+class Scale extends Component {
   constructor(props) {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
-    this.imgWidth = this.wasm_img.width(); // these 2 values are accessed frequently, but got changed only after clicking apply btn,
-    this.imgHeight = this.wasm_img.height(); // and changed values can be calculated in JS land, no need to access wasm.
+    this.imgWidth = props.imgWidth; // this.wasm_img.width(); // these 2 values are accessed frequently, but got changed only after clicking apply btn,
+    this.imgHeight = props.imgHeight; // this.wasm_img.height(); // and changed values can be calculated in JS land, no need to access wasm.
     this.scaleRegion = null;
     this.changeApplied = true; // when component get mounted, nothing changed yet, which, logically, is equal to 'change applied'
 
@@ -49,18 +53,38 @@ export default class Scale extends Component {
     }
 
     console.log('scaling...', scaleFactor / 100);
-    this.wasm_img.scale(scaleFactor / 100);
+    this.wasm_img.scale(scaleFactor / 100); // todo: pass width/height, not factor to 'scale' to avoid inconsistency
     this.props.redraw();
     this.setState({scaleFactor});
     this.changeApplied = false;
   };
 
+  // todo: close myself after clicking apply
   onApply = evt => { // todo: parse 4 values to integer before passing to scale();
+    this.imgWidth = Math.round(this.imgWidth * this.state.scaleFactor / 100); // this.wasm_img.width();
+    this.imgHeight = Math.round(this.imgHeight * this.state.scaleFactor / 100); // this.wasm_img.height();
+    this.props.setWidthHeight({width: this.imgWidth, height: this.imgHeight});
+
     this.wasm_img.apply_change();
-    this.imgWidth = this.wasm_img.width();
-    this.imgHeight = this.wasm_img.height();
     this.setState({scaleFactor: 100});
-    this.changeApplied = true
+    this.changeApplied = true;
+    this.props.onSelectTool('') // unmount myself
+    /*
+
+    let regionInfoEle = this.cropRegion.getElementsByClassName('canvas-handler-region-info');
+    let w = parseInt(regionInfoEle[0].innerText); // only block element support innerText, like div
+    let h = parseInt(regionInfoEle[1].innerText);
+    let x = parseInt(regionInfoEle[2].innerText);
+    let y = parseInt(regionInfoEle[3].innerText);
+    this.props.setWidthHeight({width: w, height: h});
+    // todo: check validity of above 4 values before passing to wasm.
+    this.wasm_img.crop(x, y, w, h);
+    this.wasm_img.apply_change();
+
+    // it's too complicated to re-calculate the new position of CropHandlers after crop, so I just unmount current component to hide CropHandler
+    this.props.onSelectTool(''); // to unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
+    this.props.redraw();
+    */
   };
 
   render() {
@@ -116,3 +140,10 @@ export default class Scale extends Component {
         </div>
     )}
 }
+
+const mapStateToProps = state => ({
+  imgWidth: state.imgStat.get('width'),
+  imgHeight: state.imgStat.get('height'),
+});
+const mapDispatchToProps = dispatch => bindActionCreators({setWidthHeight}, dispatch);
+export default connect(mapStateToProps, mapDispatchToProps)(Scale);
