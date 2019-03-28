@@ -2,6 +2,7 @@
 // contrast, brightness,
 // saturation, hue, temperature, R, G, B (单独设置)
 
+import imgObj from '../../common/imgObj'
 import {memory} from "image-editor/image_editor_bg";
 import React, {Component} from 'react';
 
@@ -22,12 +23,19 @@ class ColorTool extends Component {
     console.log('inside colorTool: ', editorItem, '/', editorValue)
   };
 
+  testHSI = () => {
+    let wasm_img = imgObj.get_wasm_img();
+    wasm_img.hsi_test();
+    this.props.redraw()
+  };
+
   // todo: add some help tips at the end of page
   // like: after applying the contrast auto-adjust, it's better to increase the Saturation a little
   render() {
     let v = this.props.editorValues;
     return (
         <div style={{display: 'flex', justifyContent: 'center'}}>
+          <button onClick={this.testHSI}>test hsi</button>
           <ul style={{listStyleType: 'none', paddingLeft: 0}}>
             <li style={listItemStyle}>
               <div className='editor-item-label'>contrast</div>

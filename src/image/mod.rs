@@ -1,10 +1,13 @@
 extern crate wasm_bindgen;
+extern crate console_error_panic_hook;
+
 use wasm_bindgen::prelude::*;
 
 use std::ops::Mul;
 use std::ops::Add;
 use std::default::Default;
 
+mod utils;
 mod scale;
 mod rotate;
 mod compress;
@@ -25,12 +28,18 @@ pub struct Image {
     width_bk: u32,
     height_bk: u32,
 
+    hsi: Vec<Vec<f64>>, // 4 elements: Hue, Saturation, Intensity, Intensity_bk, \
+    // because irreversible operations(contrast/brightness adjustment) applied on intensity only, \
+    // I need to get the Intensity_bk vector, do some calculation, overwrite Intensity vector, convert them back to RGB
+
     dct: (Vec<f64>, Vec<f64>),
 }
 
 #[wasm_bindgen]
 impl Image {
     pub fn new(w: u32, h: u32, buf: Vec<u8>) -> Image {
+        // utils::set_panic_hook();
+        console_error_panic_hook::set_once();
         let dct = Self::initialise_DCT();
         Image {
             width: w,
@@ -40,6 +49,8 @@ impl Image {
             pixels_bk: buf,
             width_bk: w,
             height_bk: h,
+
+            hsi: vec![vec![], vec![], vec![], vec![]],
 
             dct,
         }
@@ -71,12 +82,14 @@ impl Image {
         self.pixels_bk = self.pixels.clone();
         self.width_bk = self.width;
         self.height_bk = self.height;
+        self.hsi = vec![vec![], vec![], vec![], vec![]];
     }
 
     pub fn discard_change(&mut self) {
         self.pixels = self.pixels_bk.clone();
         self.width = self.width_bk;
         self.height = self.height_bk;
+        self.hsi = vec![vec![], vec![], vec![], vec![]];
     }
 
     pub fn show_pixels(&self) -> String{

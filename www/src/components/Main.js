@@ -14,8 +14,8 @@ class Main extends Component {
     this.state = {
       selectedTool: null,
     };
-    this.imgSrc = '/img/wonder-woman.jpg';
-    // this.imgSrc = '/img/len_full.jpg';
+    // this.imgSrc = '/img/wonder-woman.jpg';
+    this.imgSrc = '/img/len_full.jpg';
   }
 
   onSelectTool = id => this.setState({selectedTool: id});

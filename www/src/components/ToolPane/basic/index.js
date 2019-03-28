@@ -1,4 +1,3 @@
-// crop, resize, opacity
 import imgObj from '../../common/imgObj'
 import {memory} from "image-editor/image_editor_bg";
 import React, {Component} from 'react';

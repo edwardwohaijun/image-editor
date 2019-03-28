@@ -22,7 +22,6 @@ class Scale extends Component {
   componentDidUpdate = prevProps => { };
 
   componentWillUnmount = () => {
-    console.log('unmouting');
     if (!this.changeApplied) {
       this.wasm_img.discard_change();
       this.props.redraw();

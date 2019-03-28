@@ -10,7 +10,7 @@ impl Image {
 
         let mut rows: Vec<&mut [u8]> = self.pixels.chunks_mut(w * 4).collect();
         let mut tmp_row= vec![0_u8; w * 4];
-        let mut tmp_row_ref = tmp_row.as_mut_slice();
+        let tmp_row_ref = tmp_row.as_mut_slice();
         for row_idx in 0..(h/2) {
             rows[row_idx].swap_with_slice(tmp_row_ref);
             rows[h - row_idx - 1].swap_with_slice(tmp_row_ref);
@@ -22,7 +22,7 @@ impl Image {
     pub fn flip_h(&mut self) {
         let w = self.width as usize;
         let mut tmp_row = vec![0_u32; w];
-        let mut tmp_row_ref = tmp_row.as_mut_slice();
+        let tmp_row_ref = tmp_row.as_mut_slice();
 
         for row in self.pixels.chunks_mut(w * 4) {
             for pixel_idx in 0..w {
