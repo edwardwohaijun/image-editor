@@ -14,34 +14,7 @@ import TransformTool from './transform';
 class ToolPropList extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      basic: fromJS({
-        b1: 2,
-        b2: 3,
-      }),
-      color: fromJS({
-        grayscale: false,
-        contrast: 10,
-        brightness: 20,
-
-        hue: 30,
-        saturation: 40,
-        temperature: 50,
-
-        red: 60,
-        green: 70,
-        blue: 80,
-      }),
-      filter: fromJS({
-        gaussianBlur: 90,
-        motionBlur: 100,
-
-      }),
-      transform: fromJS({
-        flipH: true,
-
-      }),
-    };
+    this.state = { };
   }
 
   // after each operation performed by wasm, we need to redraw the canvas with data read from Rust
@@ -64,30 +37,18 @@ class ToolPropList extends Component {
         });
   };
 
-  updateEditorValue = (type, item, value) => { // todo: 其实可以在element上添加 data-*** attribute, 就不用本例那么麻烦, 一个handler pass下去即可.
-    let valueList = this.state[type];
-    this.setState({
-      [type]: valueList.set(item, value)
-    })
-  };
-
-  componentDidMount = () => {
-
-  };
-
-  componentDidUpdate = () => {
-
-  };
+  componentDidMount = () => { };
+  componentDidUpdate = () => { };
 
   render() {
     let tool;
     let label;
     switch (this.props.selectedTool) {
-      case 'tool-basic': label = 'BASIC'; tool = <BasicTool editorValues={this.state.basic} updateEditorValue={this.updateEditorValue} redraw={this.redraw}/>; break;
-      case 'tool-color': label = 'COLOR'; tool = <ColorTool editorValues={this.state.color} updateEditorValue={this.updateEditorValue} redraw={this.redraw}/>; break;
-      case 'tool-filter': label = 'FILTER'; tool = <FilterTool editorValues={this.state.filter} updateEditorValue={this.updateEditorValue} redraw={this.redraw}/>; break;
-      case 'tool-text': label = 'TEXT'; tool = <TextTool editorValues={this.state.text} updateEditorValue={this.updateEditorValue} redraw={this.redraw}/>; break;
-      case 'tool-transform': label = 'TRANSFORM'; tool = <TransformTool editorValues={this.state.transform} updateEditorValue={this.updateEditorValue} redraw={this.redraw}/>; break;
+      case 'tool-basic': label = 'BASIC'; tool = <BasicTool redraw={this.redraw}/>; break;
+      case 'tool-color': label = 'COLOR'; tool = <ColorTool redraw={this.redraw}/>; break;
+      case 'tool-filter': label = 'FILTER'; tool = <FilterTool redraw={this.redraw}/>; break;
+      case 'tool-text': label = 'TEXT'; tool = <TextTool redraw={this.redraw}/>; break;
+      case 'tool-transform': label = 'TRANSFORM'; tool = <TransformTool redraw={this.redraw}/>; break;
       default: return null
     }
     return <Header close={this.props.close} label={label}>{tool}</Header>

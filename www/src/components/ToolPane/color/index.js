@@ -1,27 +1,27 @@
-// grayscale, opacity, invert, 不是有个js/wasm video editing的效果对比吗, 上面全是color相关的操作.
-// contrast, brightness,
-// saturation, hue, temperature, R, G, B (单独设置)
-
 import imgObj from '../../common/imgObj'
 import {memory} from "image-editor/image_editor_bg";
 import React, {Component} from 'react';
-
-const listItemStyle = {marginBottom: '30px'};
+import Basic from './Basic';
+import Exposure from './Exposure';
 
 class ColorTool extends Component {
   constructor(props) {
     super(props);
+    this.state = {
+      selectedTool: ''
+    }
   }
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
-  updateEditorValue = evt => {
-    let editorItem = evt.target.id.split('-')[0];
-    let editorValue = evt.target.value;
-    this.props.updateEditorValue('color', editorItem, editorValue);
-    console.log('inside colorTool: ', editorItem, '/', editorValue)
+  onSelectTool = evt => {
+    let toolID = !evt ? '' : evt.target.id;
+    if (toolID === this.state.selectedTool) {
+      return
+    }
+    this.setState({selectedTool: toolID});
   };
+
+  componentDidMount = () => { }; // todo: create HSI
+  componentDidUpdate = () => { };
 
   testHSI = () => {
     let wasm_img = imgObj.get_wasm_img();
@@ -30,47 +30,33 @@ class ColorTool extends Component {
     this.props.redraw()
   };
 
-  // todo: add some help tips at the end of page
-  // like: after applying the contrast auto-adjust, it's better to increase the Saturation a little
   render() {
-    let v = this.props.editorValues;
     return (
-        <div style={{display: 'flex', justifyContent: 'center'}}>
-          <button onClick={this.testHSI}>test hsi</button>
-          <ul style={{listStyleType: 'none', paddingLeft: 0}}>
-            <li style={listItemStyle}>
-              <div className='editor-item-label'>contrast</div>
-              <input id='contrast-slider' type='range' min='1' max='100' step='1'
-                     onChange={this.updateEditorValue} value={v.get('contrast')}/>
-            </li>
-
-            <li style={listItemStyle}>
-              <div className='editor-item-label'>BRIGHTNESS</div>
-              <input id='brightness-slider' type='range' min='1' max='100' step='1'
-                     onChange={this.updateEditorValue} value={v.get('brightness')}/>
-            </li>
-
-            <li style={listItemStyle}>
-              <div className='editor-item-label'>SATURATION</div>
-              <input id='saturation-slider' type='range' min='1' max='100' step='1'
-                     onChange={this.updateEditorValue} value={v.get('saturation')}/>
-            </li>
-
-            <li style={listItemStyle}>
-              <div className='editor-item-label'>HUE</div>
-              <input id='hue-slider' type='range' min='1' max='100' step='1'
-                     onChange={this.updateEditorValue} value={v.get('hue')}/>
-            </li>
-
-            <li style={listItemStyle}>
-              <div className='editor-item-label'>TEMPERATURE</div>
-              <input id='temperature-slider' type='range' min='1' max='100' step='1'
-                     onChange={this.updateEditorValue} value={v.get('temperature')}/>
-            </li>
-
-          </ul>
+        <div>
+          <ToolHeader onSelect={this.onSelectTool} toolID='color-basic' selectedTool={this.state.selectedTool} label='BASIC'>
+            <Basic onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
+          </ToolHeader>
+          <ToolHeader onSelect={this.onSelectTool} toolID='color-exposure' selectedTool={this.state.selectedTool} label='EXPOSURE'>
+            <Exposure onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
+          </ToolHeader>
         </div>
-    )}
+  )}
 }
 
 export default ColorTool
+
+const ToolHeader = props => {
+  let selected = props.selectedTool === props.toolID;
+  let svgStyle = selected ? {transform: 'rotate(180deg)'} : {transform: 'rotate(0deg)'};
+  return (
+      <div className='editor-header-wrapper'>
+        <div id={props.toolID} className='editor-header' onClick={props.onSelect}>
+          <span>{props.label}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="8" className='svg-down-arrow' style={svgStyle}>
+            <path fill="#CCC" d="M7.19 7.54L0 .34.34 0l6.85 6.85L14.04 0l.34.34-7.19 7.2z"/>
+          </svg>
+        </div>
+        {selected ? props.children : null}
+      </div>
+  )
+};

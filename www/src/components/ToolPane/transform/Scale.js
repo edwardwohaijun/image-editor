@@ -67,23 +67,8 @@ class Scale extends Component {
     this.wasm_img.apply_change();
     this.setState({scaleFactor: 100});
     this.changeApplied = true;
-    this.props.onSelectTool('') // unmount myself
-    /*
-
-    let regionInfoEle = this.cropRegion.getElementsByClassName('canvas-handler-region-info');
-    let w = parseInt(regionInfoEle[0].innerText); // only block element support innerText, like div
-    let h = parseInt(regionInfoEle[1].innerText);
-    let x = parseInt(regionInfoEle[2].innerText);
-    let y = parseInt(regionInfoEle[3].innerText);
-    this.props.setWidthHeight({width: w, height: h});
-    // todo: check validity of above 4 values before passing to wasm.
-    this.wasm_img.crop(x, y, w, h);
-    this.wasm_img.apply_change();
-
     // it's too complicated to re-calculate the new position of CropHandlers after crop, so I just unmount current component to hide CropHandler
-    this.props.onSelectTool(''); // to unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
-    this.props.redraw();
-    */
+    this.props.onSelectTool('') // unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount
   };
 
   render() {

@@ -46,14 +46,33 @@ impl Image {
 
     // Zero saturation would cause the img grayscale, so there is no need for an extra fn.
     // sat: saturation adjust, gain: contrast adjust, bias: brightness adjust
-    pub fn adjust_hsi(&mut self, sat: f64, gain: f64, bias: f64) {
+    pub fn adjust_hsi(&mut self, hue_adjust: f64, sat_adjust: f64, gain: f64, bias: f64) {
         // if gain is 1, don't adjust contrast.... at least do sth to avoid unnecessary calculation
         for intensity in self.hsi[2].iter_mut() {
             *intensity = (*intensity * gain + bias).max(0.0).min(1.0)
         }
-        // if sat, loop
-        // 最好不要用iterator, 而是手动遍历, 如此可以一次性把saturation, intensity都adjust了.
-        self.hsi_to_rgb()
+
+        let (mut s, mut i) = (v&ec![0_f64;0], &vec![0_f64; 0]);
+        if sat_adjust == 0.0 {
+            saturation = &self.hsi[0]
+        } else {
+            // 可否用到Cow, 因为: either get a slice from hsi[0], or create a new one and reference to it
+        }
+
+        // self.hsi_to_rgb()
+        self.hsi_to_rgb3(&self.hsi[0], s, i)
+    }
+
+    fn hsi_to_rgb3(&mut self, h: &[f64], s: &[f64], i: &[f64]) {
+
+    }
+
+    pub fn color_to_grayscale(&mut self) {
+
+    }
+
+    pub fn grayscale_to_color(&mut self) {
+        
     }
 
     pub fn hsi_to_rgb(&mut self) {
