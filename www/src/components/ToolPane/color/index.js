@@ -25,7 +25,8 @@ class ColorTool extends Component {
 
   testHSI = () => {
     let wasm_img = imgObj.get_wasm_img();
-    wasm_img.hsi_test();
+    wasm_img.rgb_to_hsi();
+    wasm_img.adjust_hsi(0.0, 0.8, 0.25);
     this.props.redraw()
   };
 

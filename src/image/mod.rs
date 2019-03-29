@@ -18,6 +18,13 @@ mod flip;
 mod rgb_to_grayscale;
 mod rgb_hsi_convert;
 
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
 #[wasm_bindgen]
 pub struct Image {
     width: u32,
@@ -28,11 +35,8 @@ pub struct Image {
     width_bk: u32,
     height_bk: u32,
 
-    hsi: Vec<Vec<f64>>, // 4 elements: Hue, Saturation, Intensity, Intensity_bk, \
-    // because irreversible operations(contrast/brightness adjustment) applied on intensity only, \
-    // I need to get the Intensity_bk vector, do some calculation, overwrite Intensity vector, convert them back to RGB
-
-    dct: (Vec<f64>, Vec<f64>),
+    hsi: Vec<Vec<f64>>, //  elements: Hue, Saturation, Intensity
+    dct: (Vec<f64>, Vec<f64>), // depreciated
 }
 
 #[wasm_bindgen]
@@ -40,7 +44,6 @@ impl Image {
     pub fn new(w: u32, h: u32, buf: Vec<u8>) -> Image {
         // utils::set_panic_hook();
         console_error_panic_hook::set_once();
-        let dct = Self::initialise_DCT();
         Image {
             width: w,
             height: h,
@@ -50,9 +53,8 @@ impl Image {
             width_bk: w,
             height_bk: h,
 
-            hsi: vec![vec![], vec![], vec![], vec![]],
-
-            dct,
+            hsi: vec![vec![], vec![], vec![]],
+            dct: Self::initialise_DCT(),
         }
     }
 
@@ -67,7 +69,6 @@ impl Image {
         self.pixels_bk = buf;
         self.width_bk = w;
         self.height_bk = h;
-
     }
 
     pub fn pixels(&self) -> *const u8 {
@@ -82,42 +83,16 @@ impl Image {
         self.pixels_bk = self.pixels.clone();
         self.width_bk = self.width;
         self.height_bk = self.height;
-        self.hsi = vec![vec![], vec![], vec![], vec![]];
     }
 
     pub fn discard_change(&mut self) {
         self.pixels = self.pixels_bk.clone();
         self.width = self.width_bk;
         self.height = self.height_bk;
-        self.hsi = vec![vec![], vec![], vec![], vec![]];
     }
 
-    pub fn show_pixels(&self) -> String{
-        // println!("all pixels: {:?}", self.pixels)
-        format!("all pixels/len: {:?}/{:?}", self.pixels.len(), self.pixels)
-    }
 
-    pub fn free_draw(&mut self) {
-
-    }
-
-    // looks like DCT is for JPEG, what about PNG/GIF, or even SVG?
-    // add a filter to only allow JPEG/PNG when click "file" element.
-
-    pub fn show_quantization_matrix(&self, quality: i32) -> String {
-        let q = Self::quantization_matrix(70);
-        let mut s = String::new();
-        s.push('\n');
-        for (idx, item) in q.iter().enumerate() {
-            let item_str = format!("{:?},", item);
-            s.push_str(&item_str);
-            if (1 + idx) % 8 == 0 {
-                s.push('\n')
-            }
-        }
-        s
-    }
-
+    // looks like DCT is for JPEG, what about PNG/GIF?
     fn initialise_DCT() -> (Vec<f64>, Vec<f64>) {
         const N: usize = 8;
         let mut dct = vec![0_f64; N * N];
@@ -146,18 +121,6 @@ impl Image {
         (dct, transposed)
     }
 
-    pub fn show_dct(&self) -> String{
-        let mut s = String::new();
-        for (idx, item) in self.dct.0.iter().enumerate() {
-            s.push_str(&item.to_string());
-            s.push(',');
-            if idx % 7 == 0 {
-                s.push('\n')
-            }
-        }
-        s
-    }
-
     // todo: move it into util module
     fn multiply_matrix<T>(buf: &mut [T], m1: &[T], m2: &[T])
         where T: Add<Output=T> + Mul<Output=T> + Default + Copy
@@ -173,7 +136,8 @@ impl Image {
         }
 
     }
-    pub fn test_multiply(&self) -> String {
+
+    fn test_multiply(&self) {
         let v1 = vec![
             1,2,3,4,5,6,7,8,
             9,10,11,12,13,14,15,16,
@@ -196,25 +160,11 @@ impl Image {
         ];
         let mut result = vec![0; 64];
         Self::multiply_matrix(&mut result, &v1, &v2);
-        let s = format!("{:?}", result);
-        s
-    }
-
-    pub fn estimated_size(&self) -> u32 {
-        100
-    }
-
-    // sharpen(), smooth()
-    pub fn contrast_enhance(&mut self) {
-
+        log!("test matrix multiply: {:?}", result);
     }
 
     pub fn undo(&mut self) {
 
-    }
-
-    pub fn show_me(&self) -> Vec<u8> {
-        self.pixels[0..4].to_vec()
     }
 
 }

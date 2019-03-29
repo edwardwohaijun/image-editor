@@ -56,20 +56,11 @@ class ToolPropList extends Component {
           imgObj.imgBuff = img;
           let ratio = this.props.zoomRatio;
           let canvas = document.getElementById('canvas');
-
-          // I just found: if canvas width/height are the same as "w * ratio and h * ratio", canvas would be black as if drawImage never run
-          // if (Math.round(w * ratio) !== canvas.width || Math.round(h * ratio) !== canvas.height) {
-            //canvas.width = Math.round(w * ratio);
-            //canvas.height = Math.round(h * ratio);
-          //}
           canvas.width = Math.round(w * ratio);
           canvas.height = Math.round(h * ratio);
-          // console.log('current w/h, incoming w/h', canvas.width, '/', canvas.height, '....', w * ratio, '/', h * ratio);
           let ctx = canvas.getContext('2d');
-          ctx.scale(ratio, ratio); // todo: 这个也可以挪到上面的  if () 中, 如果ratio 也不变(用户没有点击zoom btn), 就不要执行 scale 了.
-          console.log('redrawing........');
+          ctx.scale(ratio, ratio);
           ctx.drawImage(img, 0, 0);
-          // console.log('after redraw: newly got img: ',img, '/w-h', w , '/', h, '/', ratio);
         });
   };
 
