@@ -7,6 +7,9 @@ use super::Image;
 impl Image {
     pub fn scale(&mut self, factor: f64) {
         if factor == 1.0 {
+            self.pixels = self.pixels_bk.clone();
+            self.width = self.width_bk;
+            self.height = self.height_bk;
             return;
         }
 

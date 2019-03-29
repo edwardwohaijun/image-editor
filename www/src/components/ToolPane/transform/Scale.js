@@ -33,7 +33,7 @@ class Scale extends Component {
     let scaleFactor = 1;
     switch (eleID) {
       case 'transform-scale-setter': {
-        scaleFactor = evt.target.value;
+        scaleFactor = parseInt(evt.target.value); // evt.target.value is text not number
         break;
       }
       case 'transform-scale-down-btn': {
@@ -47,12 +47,12 @@ class Scale extends Component {
       default: return
     }
 
+
     if (this.state.scaleFactor === scaleFactor) {
       return
     }
 
-    console.log('scaling...', scaleFactor / 100);
-    this.wasm_img.scale(scaleFactor / 100); // todo: pass width/height, not factor to 'scale' to avoid inconsistency
+    this.wasm_img.scale(scaleFactor / 100); // todo: pass width/height, not factor to 'scale' to avoid rounding error
     this.props.redraw();
     this.setState({scaleFactor});
     this.changeApplied = false;

@@ -52,15 +52,17 @@ impl Image {
             *intensity = (*intensity * gain + bias).max(0.0).min(1.0)
         }
 
-        let (mut s, mut i) = (v&ec![0_f64;0], &vec![0_f64; 0]);
+        /*
+        let (mut s, mut i) = (&vec![0_f64;0], &vec![0_f64; 0]);
         if sat_adjust == 0.0 {
             saturation = &self.hsi[0]
         } else {
             // 可否用到Cow, 因为: either get a slice from hsi[0], or create a new one and reference to it
         }
+        */
 
         // self.hsi_to_rgb()
-        self.hsi_to_rgb3(&self.hsi[0], s, i)
+        // self.hsi_to_rgb3(&self.hsi[0], s, i)
     }
 
     fn hsi_to_rgb3(&mut self, h: &[f64], s: &[f64], i: &[f64]) {
@@ -72,7 +74,7 @@ impl Image {
     }
 
     pub fn grayscale_to_color(&mut self) {
-        
+
     }
 
     pub fn hsi_to_rgb(&mut self) {
