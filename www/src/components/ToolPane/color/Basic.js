@@ -50,7 +50,8 @@ export default class Basic extends Component {
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {
-      this.wasm_img.discard_change()
+      this.wasm_img.discard_change();
+      this.props.redraw();
     }
   };
   // shouldComponentUpdate = (nextProps, nextState) => { };

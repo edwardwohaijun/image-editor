@@ -27,7 +27,7 @@ impl Image {
         for idx in 0..size {
             // normalize rgb value to [0, 1]
             // many online materials say: to normalise R/G/B into [0, 1], divide each value by (R+G+B)
-            // but it's wrong, 255 should be the divisor
+            // but this is wrong, 255 should be the divisor
             R = self.pixels_bk[idx * 4 + 0] as f64 / 255.0;
             G = self.pixels_bk[idx * 4 + 1] as f64 / 255.0;
             B = self.pixels_bk[idx * 4 + 2] as f64 / 255.0;
@@ -35,10 +35,8 @@ impl Image {
             hue = (0.5 * ((R-G) + (R-B)) / (((R-G) * (R-G) + (R-B) * (G-B)).sqrt() + 0.001)).acos(); // adding 0.001 to avoid dividing by zero
             if B > G {
                 hue = two_pi - hue
-                //self.hsi[0][idx] = two_pi - hue
-            } else {
-                //self.hsi[0][idx] = hue
             }
+
             self.hsi[0][idx] = hue;
             self.hsi[1][idx] = 1.0 - 3.0 / (R + G + B) * R.min(G).min(B); // saturation
             self.hsi[2][idx] = (R + G + B) / 3.0 // intensity
@@ -70,7 +68,7 @@ impl Image {
         };
 
         let mut saturation = vec![0_f64;0];
-        let saturation_ref = if grayscaled { // front-end will make sure grayscale and saturation-change will occur at the same time
+        let saturation_ref = if grayscaled { // front-end will make sure grayscale and saturation-change won't occur at the same time
             saturation = vec![0_f64; width * height];
             &saturation
         } else if s_amt != 0.0 {
@@ -92,7 +90,6 @@ impl Image {
     fn hsi_to_rgb3(&mut self, hue: &[f64], saturation: &[f64]) {
         let width = self.width as usize;
         let height = self.height as usize;
-        let mut rgb = vec![0_u8; width * height * 4];
 
         let (mut h, mut s, mut i, mut x, mut y, mut z);
         let two_third_pi = 2.0 / 3.0 * std::f64::consts::PI;
@@ -113,27 +110,26 @@ impl Image {
                 y = get_y(i,s,h);
                 z = get_z(i,x,y);
 
-                rgb[idx * 4 + 0] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8}; // todo: 最好用 & ff00 这个法子 clamp 一下
-                rgb[idx * 4 + 1] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8}; // todo: 想法子优化写法.
-                rgb[idx * 4 + 2] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+                self.pixels[idx * 4 + 0] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8}; // todo: 最好用 & ff00 这个法子 clamp 一下
+                self.pixels[idx * 4 + 1] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8}; // todo: 想法子优化写法.
+                self.pixels[idx * 4 + 2] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
             } else if h >= two_third_pi { // [120, 240) degree
                 h -= two_third_pi;
                 y = get_y(i,s,h);
                 z = get_z(i,x,y);
 
-                rgb[idx * 4 + 0] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
-                rgb[idx * 4 + 1] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                rgb[idx * 4 + 2] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
+                self.pixels[idx * 4 + 0] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
+                self.pixels[idx * 4 + 1] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+                self.pixels[idx * 4 + 2] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
             } else { // [0, 120) degree
                 y = get_y(i,s,h);
                 z = get_z(i,x,y);
-                rgb[idx * 4 + 0] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                rgb[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
-                rgb[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
+                self.pixels[idx * 4 + 0] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+                self.pixels[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
+                self.pixels[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
             }
-            rgb[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3]
+            self.pixels[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3]
         }
-        self.pixels = rgb
     }
 
     // gain: contrast adjust, bias: brightness adjust
