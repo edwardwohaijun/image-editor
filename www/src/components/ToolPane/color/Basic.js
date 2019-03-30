@@ -32,17 +32,15 @@ export default class Basic extends Component {
         //this.wasm_img.hue(v)
       },
       'hue': v => {
-        console.log('hue changed: ', v);
-        this.wasm_img.adjust_hsi(0.52, -0.2, false, false); // 0.52 = 30 deg
+        console.log('hue changed: ', 2 * Math.PI * v / 20, '/', v); // is [-10, 10] too wide?
+        this.wasm_img.adjust_hsi(2 * Math.PI * v / 20, this.state.saturation / 20, this.state.grayscaled, this.state.inverted);
         this.props.redraw();
-        //this.wasm_img.hue(v)
       },
       'saturation': v => {
-        console.log('saturation changed: ', v);
-        this.wasm_img.adjust_hsi(0.0, 0.2, false, false);
+        console.log('saturation changed: but original hue: ', 2 * Math.PI * this.state.hue / 20);
+        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, v / 20, this.state.grayscaled, this.state.inverted);
         this.props.redraw();
-        //this.wasm_img.hue(v)
-      },
+         },
       'temperature': v => {
         console.log('temperature: ', v);
         //this.wasm_img.hue(v)
@@ -78,10 +76,9 @@ export default class Basic extends Component {
     if (newValue === currentValue) {
       return
     }
-
+    this.op[valueType](newValue);
     this.setState({ [valueType]: newValue });
     this.changeApplied = false;
-    this.op[valueType](newValue)
   };
 
   onApply = () => {

@@ -54,14 +54,13 @@ impl Image {
         let two_pi = 2.0 * std::f64::consts::PI;
 
         let mut hue = vec![0_f64;0];
+        let new_hue = |h: f64| -> f64 {
+            if inverted { (two_pi - h + h_amt).min(two_pi).max(0.0) } else { (h + h_amt).min(two_pi).max(0.0) }
+        };
         let hue_ref = if h_amt != 0.0 || inverted {
             hue = self.hsi[0].clone();
-            // the order of adding amount and doing invert matters, but I don't want to complicate thing \
-            // so just do invert first, then add.
-            // no, I don't think that matters according to the following impl.
-            // hue.iter_mut().map(|h| (two_pi - *h + h_amt).min(two_pi).max(0.0))
             for h in hue.iter_mut() {
-                *h = (two_pi - *h + h_amt).min(two_pi).max(0.0);
+                *h = new_hue(*h)
             }
             &hue
         } else {

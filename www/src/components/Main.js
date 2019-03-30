@@ -15,7 +15,10 @@ class Main extends Component {
       selectedTool: null,
     };
     // this.imgSrc = '/img/wonder-woman.jpg';
-    this.imgSrc = '/img/len_full.jpg';
+    // this.imgSrc = '/img/len_full.jpg';
+    this.imgSrc = '/img/road.jpg';
+    // this.imgSrc = '/img/stairs.jpg';
+    // this.imgSrc = '/img/lake.jpg';
   }
 
   onSelectTool = id => this.setState({selectedTool: id});
