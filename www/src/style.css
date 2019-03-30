@@ -17,6 +17,10 @@ a {
     outline: none;
 }
 
+.disabled {
+    cursor: not-allowed;
+}
+
 .scrollbar {
     overflow: auto;
 }

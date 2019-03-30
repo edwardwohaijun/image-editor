@@ -16,8 +16,8 @@ macro_rules! log {
 #[wasm_bindgen]
 impl Image {
     pub fn rgb_to_hsi(&mut self) { // it's better to hide this fn, get called implicitly
-        let width = self.width_bk as usize;
-        let height = self.height_bk as usize;
+        let width = self.width as usize;
+        let height = self.height as usize;
         let size = width * height;
         self.hsi = vec![vec![0_f64; size], vec![0_f64; size], vec![0_f64; size]];
 
@@ -34,46 +34,111 @@ impl Image {
 
             hue = (0.5 * ((R-G) + (R-B)) / (((R-G) * (R-G) + (R-B) * (G-B)).sqrt() + 0.001)).acos(); // adding 0.001 to avoid dividing by zero
             if B > G {
-                self.hsi[0][idx] = two_pi - hue
+                hue = two_pi - hue
+                //self.hsi[0][idx] = two_pi - hue
             } else {
-                self.hsi[0][idx] = hue
+                //self.hsi[0][idx] = hue
             }
-
+            self.hsi[0][idx] = hue;
             self.hsi[1][idx] = 1.0 - 3.0 / (R + G + B) * R.min(G).min(B); // saturation
-            self.hsi[2][idx] = (R + G + B) / 3.0
+            self.hsi[2][idx] = (R + G + B) / 3.0 // intensity
         }
     }
 
-    // Zero saturation would cause the img grayscale, so there is no need for an extra fn.
-    // sat: saturation adjust, gain: contrast adjust, bias: brightness adjust
-    pub fn adjust_hsi(&mut self, hue_adjust: f64, sat_adjust: f64, gain: f64, bias: f64) {
-        // if gain is 1, don't adjust contrast.... at least do sth to avoid unnecessary calculation
-        for intensity in self.hsi[2].iter_mut() {
-            *intensity = (*intensity * gain + bias).max(0.0).min(1.0)
-        }
+    // first 2 arguments are the amount of hue and saturation to be adjusted to the current hsi,\
+    // then convert back to rgb by calling hsi_to_rgb().
+    // Intensity adjust is implemented in another fn: intensity_adjust().
+    pub fn adjust_hsi(&mut self, h_amt: f64, s_amt: f64, grayscaled: bool, inverted: bool) {
+        let width = self.width as usize;
+        let height = self.height as usize;
+        let two_pi = 2.0 * std::f64::consts::PI;
 
-        /*
-        let (mut s, mut i) = (&vec![0_f64;0], &vec![0_f64; 0]);
-        if sat_adjust == 0.0 {
-            saturation = &self.hsi[0]
+        let mut hue = vec![0_f64;0];
+        let hue_ref = if h_amt != 0.0 || inverted {
+            hue = self.hsi[0].clone();
+            // the order of adding amount and doing invert matters, but I don't want to complicate thing \
+            // so just do invert first, then add.
+            // no, I don't think that matters according to the following impl.
+            // hue.iter_mut().map(|h| (two_pi - *h + h_amt).min(two_pi).max(0.0))
+            for h in hue.iter_mut() {
+                *h = (two_pi - *h + h_amt).min(two_pi).max(0.0);
+            }
+            &hue
         } else {
-            // 可否用到Cow, 因为: either get a slice from hsi[0], or create a new one and reference to it
+            hue = self.hsi[0].clone();
+            &hue
+            // &self.hsi[0] // here is the immutable ref, at the end of this fn, there is a mutable ref, so.....
+        };
+
+        let mut saturation = vec![0_f64;0];
+        let saturation_ref = if grayscaled { // front-end will make sure grayscale and saturation-change will occur at the same time
+            saturation = vec![0_f64; width * height];
+            &saturation
+        } else if s_amt != 0.0 {
+            saturation = self.hsi[1].clone();
+            for s in saturation.iter_mut() {
+                *s = (*s + s_amt).min(1.0).max(0.0);
+            }
+            &saturation
+        } else {
+            saturation = self.hsi[1].clone();
+            &saturation
+            // &self.hsi[1]
+        };
+
+        self.hsi_to_rgb3(hue_ref, saturation_ref);
+        // self.hsi_to_rgb3(hue_ref, saturation_ref, &self.hsi[2]); // intensity ref as last arg would cause: mutable ref and immutable ref, so....
+    }
+
+    fn hsi_to_rgb3(&mut self, hue: &[f64], saturation: &[f64]) {
+        let width = self.width as usize;
+        let height = self.height as usize;
+        let mut rgb = vec![0_u8; width * height * 4];
+
+        let (mut h, mut s, mut i, mut x, mut y, mut z);
+        let two_third_pi = 2.0 / 3.0 * std::f64::consts::PI;
+        let four_third_pi = 2.0 * two_third_pi;
+
+        let get_y= |i: f64, s: f64, h: f64| -> f64 { i * (1.0 + s * h.cos() / (((std::f64::consts::PI / 3.0) - h).cos())) };
+        let get_z = |i: f64, x: f64, y: f64| -> f64 {3.0 * i - (x + y)};
+
+        for idx in 0..width * height {
+            h = hue[idx];
+            s = saturation[idx];
+            i = self.hsi[2][idx];
+
+            x = i * (1.0 - s);
+
+            if h >= four_third_pi { // [240, 360] degree
+                h -= four_third_pi;
+                y = get_y(i,s,h);
+                z = get_z(i,x,y);
+
+                rgb[idx * 4 + 0] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8}; // todo: 最好用 & ff00 这个法子 clamp 一下
+                rgb[idx * 4 + 1] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8}; // todo: 想法子优化写法.
+                rgb[idx * 4 + 2] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+            } else if h >= two_third_pi { // [120, 240) degree
+                h -= two_third_pi;
+                y = get_y(i,s,h);
+                z = get_z(i,x,y);
+
+                rgb[idx * 4 + 0] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
+                rgb[idx * 4 + 1] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+                rgb[idx * 4 + 2] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
+            } else { // [0, 120) degree
+                y = get_y(i,s,h);
+                z = get_z(i,x,y);
+                rgb[idx * 4 + 0] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
+                rgb[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
+                rgb[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
+            }
+            rgb[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3]
         }
-        */
-
-        // self.hsi_to_rgb()
-        // self.hsi_to_rgb3(&self.hsi[0], s, i)
+        self.pixels = rgb
     }
 
-    fn hsi_to_rgb3(&mut self, h: &[f64], s: &[f64], i: &[f64]) {
-
-    }
-
-    pub fn color_to_grayscale(&mut self) {
-
-    }
-
-    pub fn grayscale_to_color(&mut self) {
+    // gain: contrast adjust, bias: brightness adjust
+    pub fn adjust_intensity(&mut self, gain: f64, bias: f64) {
 
     }
 

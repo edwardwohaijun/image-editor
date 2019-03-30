@@ -9,7 +9,8 @@ class ColorTool extends Component {
     super(props);
     this.state = {
       selectedTool: ''
-    }
+    };
+    this.wasm_img = imgObj.get_wasm_img();
   }
 
   onSelectTool = evt => {
@@ -20,13 +21,15 @@ class ColorTool extends Component {
     this.setState({selectedTool: toolID});
   };
 
-  componentDidMount = () => { }; // todo: create HSI
+  componentDidMount = () => this.wasm_img.rgb_to_hsi();
+  componentWillUnmount = () => this.wasm_img.clear_hsi();
+
   componentDidUpdate = () => { };
 
   testHSI = () => {
-    let wasm_img = imgObj.get_wasm_img();
-    wasm_img.rgb_to_hsi();
-    wasm_img.adjust_hsi(0.0, 0.8, 0.25);
+    // let wasm_img = imgObj.get_wasm_img();
+    this.wasm_img.rgb_to_hsi();
+    this.wasm_img.adjust_hsi(0.0, 0.8, 0.25);
     this.props.redraw()
   };
 
