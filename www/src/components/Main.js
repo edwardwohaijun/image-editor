@@ -125,7 +125,7 @@ class Main extends Component {
         this.setState({selectedTool: null})
       }
     } else {
-      return
+      // return
     }
   };
 
