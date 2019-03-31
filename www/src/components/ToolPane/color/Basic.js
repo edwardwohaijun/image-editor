@@ -21,26 +21,24 @@ export default class Basic extends Component {
     // when the component get mounted the first time, nothing changed yet, which is, logically, the same as change applied.
     this.changeApplied = true;
 
-//     pub fn adjust_hsi(&mut self, h_amt: f64, s_amt: f64, grayscaled: bool, inverted: bool) {...}
+    // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, grayscaled: bool, inverted: bool) {...}
     this.op = {
       'grayscaled': v => {
         console.log('grayscaled: ', v);
-        //this.wasm_img.hue(v)
+        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, this.state.saturation / 20, v, this.state.inverted);
       },
       'inverted': v => {
+        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, this.state.saturation / 20, this.state.grayscaled, v);
         console.log('inverted: ', v);
-        //this.wasm_img.hue(v)
       },
       'hue': v => {
         console.log('hue changed: ', 2 * Math.PI * v / 20, '/', v); // is [-10, 10] too wide?
         this.wasm_img.adjust_hsi(2 * Math.PI * v / 20, this.state.saturation / 20, this.state.grayscaled, this.state.inverted);
-        this.props.redraw();
       },
       'saturation': v => {
         console.log('saturation changed: but original hue: ', 2 * Math.PI * this.state.hue / 20);
         this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, v / 20, this.state.grayscaled, this.state.inverted);
-        this.props.redraw();
-         },
+      },
       'temperature': v => {
         console.log('temperature: ', v);
         //this.wasm_img.hue(v)
@@ -77,9 +75,11 @@ export default class Basic extends Component {
     if (newValue === currentValue) {
       return
     }
+
     this.op[valueType](newValue);
-    this.setState({ [valueType]: newValue });
+    this.props.redraw();
     this.changeApplied = false;
+    this.setState({ [valueType]: newValue });
   };
 
   onApply = () => {

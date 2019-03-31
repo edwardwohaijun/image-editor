@@ -19,14 +19,14 @@ export default class ImgFileHandler extends Component {
         <div style={{display: 'flex', justifyContent: 'space-around', width: '280px', alignItems: 'center'}}>
           <Open resizeCanvas={this.props.resizeCanvas} loadImage={this.props.loadImage}/>
           <Save />
-          <Restore loadImage={this.props.loadImage} onSelectTool={this.props.onSelectTool} />
+          <Restore loadImage={this.props.loadImage} />
         </div>
     )}
 }
 
 
 const BtnWrapperStyle = {height: '36px', display: 'flex', alignItems: 'center', position: 'relative'};
-// todo: after opening an img, close the dropdown menu
+// todo: close the dropdown menu if user cancel the File dialog without selecting any files
 class Open extends Component {
   constructor(props) {
     super(props);
@@ -53,13 +53,11 @@ class Open extends Component {
   onFileClick = evt => evt.target.value = null;
   onFileChange = evt => {
     this.setState({dropdownVisible: false});
-    this.props.loadImage(evt.target.files[0])
+    this.props.loadImage(evt.target.files[0]);
   };
 
   onGoToURL = evt => {
-    console.log('evt in gotourl: ', evt.target.parentElement);
     let url = evt.target.parentElement.querySelector('#img-url').value;
-    console.log('go to url: ', url);
     // todo: keep the dropdown menu open, while fetching the img, and showing a spinning icon on Go button
     // if succeeded, close the dropdown menu, otherwise, show a failed tip
     // if the url is invalid, also show a failed, just keep it simple.
@@ -155,7 +153,6 @@ class Restore extends Component { // restore to original state(the moment img ge
   componentDidUpdate = () => {};
   restore = () => {
     this.props.loadImage();
-    this.props.onSelectTool(null) // if there is a tool selected(icon highlighted), unselect it, and the toolPane will move back to original position
   };
 
   render() {

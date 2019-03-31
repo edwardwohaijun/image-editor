@@ -128,7 +128,7 @@ impl Image {
                 self.pixels[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
                 self.pixels[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
             }
-            self.pixels[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3]
+            // self.pixels[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3] // I don't think I need this line.
         }
     }
 

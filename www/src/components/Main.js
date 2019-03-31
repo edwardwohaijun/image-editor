@@ -105,6 +105,7 @@ class Main extends Component {
         this.props.setWidthHeight({width: img.naturalWidth, height: img.naturalHeight});
         this.drawImage(img);
         this.imgSrc = src;
+        this.setState({selectedTool: null});
       };
     } else if (srcType === 'file') {
       let reader = new FileReader();
@@ -115,7 +116,13 @@ class Main extends Component {
       img.onload = () => {
         this.props.setWidthHeight({width: img.naturalWidth, height: img.naturalHeight});
         this.drawImage(img);
-        this.imgSrc = src
+        this.imgSrc = src;
+
+        // To close the Accordion menu, when new img is opened, or current one is restored.
+        // Some img processing component need to create HSI after mounted, \
+        // we need to unmount those component when new img is loaded(or restored), otherwise, new img still use old img's HSI
+        // this line should be at the end of img.onload, otherwise, drawImage would still use the old one, weird!!!
+        this.setState({selectedTool: null})
       }
     } else {
       return
@@ -131,6 +138,8 @@ class Main extends Component {
     let wasm_img = imgObj.get_wasm_img();
     wasm_img.reuse(w, h, new Uint8Array(2)); // resizeCanvas call need width/height in wasm_img, but the img data(3rd arg) is not ready, just pass a dummy data to it.
     this.resizeCanvas(true); // this must be called when wasm_img is ready.
+    // but, since we save w/h in redux, can resizeCanvas read w/h in redux rather than wasm_img, this could remove the above .reuse() call
+    // todo, test above assert
 
     let canvas = document.getElementById('canvas');
     canvas.getContext('2d').drawImage(img, 0, 0);
@@ -151,7 +160,7 @@ class Main extends Component {
     canvasParentStyle.transform = this.state.selectedTool == null ? 'translate(0px, 0px)' : 'translate(250px, 0px)';
     return (
         <div>
-          <Header resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} onSelectTool={this.onSelectTool}/>
+          <Header resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} />
           <div style={{display: 'flex', position: 'relative', zIndex: '50',  bottom: '0px', width: '100%'}}>
             <ToolPane onSelectTool={this.onSelectTool} selectedTool={this.state.selectedTool}/>
             <div style={canvasParentStyle} id='canvas-parent'>

@@ -17,7 +17,7 @@ class Header extends Component {
     return (
         <div style={{width: '100%', height: '56px', display: 'flex', zIndex: '100', position: 'relative', justifyContent: 'space-between', backgroundColor: '#373842', boxShadow: '0 0 0.5rem rgba(0,0,0,.8)'}}>
           <ModeSwitcher/>
-          <ImgFileHandler resizeCanvas={this.props.resizeCanvas} loadImage={this.props.loadImage} onSelectTool={this.props.onSelectTool}/>
+          <ImgFileHandler resizeCanvas={this.props.resizeCanvas} loadImage={this.props.loadImage} />
           <Account/>
         </div>
     )}

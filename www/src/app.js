@@ -19,8 +19,13 @@ import './style.css';
 let initialState = {
     imgStat: fromJS({ // main() state 中也有个 imgStat(存放img的size, w/h等), 重名不好. 本例直接: viewRate: 0 即可.
       zoomRatio: 0, // range: [0.2, 4]. 0 is not a valid ratio, but canvas redraw only when this value change from 0 to a valid value
-      width: 0, // width/height can be read from wasm_img, but some width/height changing operations(like Scale) are too expensive,\
-      height: 0, // but I need the new width/height value immediately, so use this lightweight approach
+      width: 0, // width/height can be read from wasm_img, but not accurate in real time.
+      height: 0, // typical use case: user scale down the img, then click 'Crop' tool without applying the changes,\
+      // I need to restore the img to original width/height by calling wasm_img.discard_change(), then redraw, both of which are expensive, \
+      // By the time Crop component is loaded, Scale-to-original might not have finished yet.
+      // But Crop component need img width/height immediately to set handler position, it might read the scaled-down width/height value
+      // So I just save the current width/height in redux for quick access.
+
       // size: 0,
     }),
 
