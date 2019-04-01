@@ -10,40 +10,22 @@ export default class Basic extends Component {
       grayscaled: false,
       // opacity: 0,
 
-      // there are too many evt handlers in this component,\
+      // there are too many evt in this component,\
       // the following 3 values are normalized in [-10, 10] for generalization purpose,\
-      // thus, one handler can cover them all, the value passed to wasm_img are de-normalized
-      hue: 0, // disable these 3 fields when grayscaled: true,
-      saturation: 0, // technically,
+      // thus, one handler(onChange) can cover them all, the value passed to wasm_img.adjust_hsi() are de-normalized by applying this.normalizeFactor object.
+      hue: 0, // disable these 3 fields when grayscaled is true,
+      saturation: 0,
       temperature: 0,
       // tint,
     };
+    this.normalizeFactor = {
+      hue: 2 * Math.PI / 20,
+      saturation: 1/20,
+      temperature: 10,
+    };
     // when the component get mounted the first time, nothing changed yet, which is, logically, the same as change applied.
     this.changeApplied = true;
-
-    // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, grayscaled: bool, inverted: bool) {...}
-    this.op = {
-      'grayscaled': v => {
-        console.log('grayscaled: ', v);
-        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, this.state.saturation / 20, v, this.state.inverted);
-      },
-      'inverted': v => {
-        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, this.state.saturation / 20, this.state.grayscaled, v);
-        console.log('inverted: ', v);
-      },
-      'hue': v => { // todo: each step specified as 30degree might be a good choice.
-        console.log('hue changed: ', 2 * Math.PI * v / 20, '/', v); // is [-10, 10] too wide?
-        this.wasm_img.adjust_hsi(2 * Math.PI * v / 20, this.state.saturation / 20, this.state.grayscaled, this.state.inverted);
-      },
-      'saturation': v => {
-        console.log('saturation changed: but original hue: ', 2 * Math.PI * this.state.hue / 20);
-        this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, v / 20, this.state.grayscaled, this.state.inverted);
-      },
-      'temperature': v => {
-        console.log('temperature: ', v);
-        //this.wasm_img.hue(v)
-      },
-    }
+    // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, temperature_amt: i32, grayscaled: bool, inverted: bool) {...}
   }
 
   componentWillUnmount = () => {
@@ -76,10 +58,18 @@ export default class Basic extends Component {
       return
     }
 
-    this.op[valueType](newValue);
-    this.props.redraw();
+    // this.op[valueType](newValue);
     this.changeApplied = false;
-    this.setState({ [valueType]: newValue });
+    this.setState({[valueType]: newValue }, () => {
+      let h = this.state.hue * this.normalizeFactor.hue;
+      let s = this.state.saturation * this.normalizeFactor.saturation;
+      let t = this.state.temperature * this.normalizeFactor.temperature;
+      let g = this.state.grayscaled;
+      let i = this.state.inverted;
+      this.wasm_img.adjust_hsi(h, s, t, g, i);
+      this.props.redraw();
+    });
+
   };
 
   onApply = () => {

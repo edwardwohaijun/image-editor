@@ -18,7 +18,8 @@ class Main extends Component {
     // this.imgSrc = '/img/len_full.jpg';
     // this.imgSrc = '/img/road.jpg';
     //this.imgSrc = '/img/stairs.jpg';
-    this.imgSrc = '/img/lake.jpg';
+    // this.imgSrc = '/img/lake.jpg';
+    this.imgSrc = '/img/true_blood_cold_temperature.jpg'
     // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
 
