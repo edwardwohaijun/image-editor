@@ -10,10 +10,15 @@ export default class Exposure extends Component {
     }
   }
 
+  autoSet = () => {
+    this.wasm_img.auto_adjust_intensity();
+    this.props.redraw();
+  };
 
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
+          <button onClick={this.autoSet}>test 'adjust intensity'</button>
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Brightness</div>

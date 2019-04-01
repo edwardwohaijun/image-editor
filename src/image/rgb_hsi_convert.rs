@@ -44,19 +44,6 @@ impl Image {
         }
     }
 
-    // this fn modify R/B channel directly, leave G channel unchanged
-    pub fn adjust_temperature(&mut self, t_amt: i32) {
-        let width = self.width as usize;
-        let height = self.height as usize;
-        let mut red: i32;
-        let mut blue: i32;
-        let new_value = |current_value, t_amt| -> i32 {cmp::max(cmp::min((current_value as i32 + t_amt as i32), 255), 0)};
-        for idx in 0..width * height {
-            self.pixels[idx * 4 + 0] = new_value(self.pixels[idx * 4 + 0], t_amt) as u8;
-            self.pixels[idx * 4 + 2] = new_value(self.pixels[idx * 4 + 2], -t_amt) as u8
-        }
-    }
-
     // first 2 arguments are the amount of hue and saturation to be adjusted to the current hsi,\
     // the 3rd argument is amount of temperature, it's not used in this fn, only get passed to the next hsi_to_rgb() call.
     // Then we convert back to rgb by calling hsi_to_rgb().
@@ -89,7 +76,7 @@ impl Image {
             // but you can't create shared ref: "&self.hsi[0]" and use mutable ref: "self.hsi_to_rgb()" at the same time, \
             // thus, I pass the zero-lengthed ref to hsi_to_rgb() which'd check its length, \
             // use self.hsi[0] if hue_ref.len() is zero.
-            // The same logic applies to saturation_ref.
+            // The same logic applies to saturation_ref and intensity_ref.
             &hue
             // &self.hsi[0] // here is the immutable ref, at the end of this fn, there is a mutable ref, so.....
         };
@@ -108,11 +95,12 @@ impl Image {
             &saturation
         };
 
-        self.hsi_to_rgb3(hue_ref, saturation_ref, t_amt);
+        let intensity_ref = &vec![0_f64;0];
+        self.hsi_to_rgb(hue_ref, saturation_ref, intensity_ref, t_amt);
     }
 
     // http://eng.usf.edu/~hady/courses/cap5400/rgb-to-hsi.pdf
-    fn hsi_to_rgb3(&mut self, hue: &[f64], saturation: &[f64], t_amt: i32) {
+    fn hsi_to_rgb(&mut self, hue: &[f64], saturation: &[f64], intensity: &[f64], t_amt: i32) {
         let width = self.width as usize;
         let height = self.height as usize;
 
@@ -126,6 +114,8 @@ impl Image {
 
         let hue = if hue.len() == 0 { &self.hsi[0] } else { hue };
         let saturation = if saturation.len() == 0 { &self.hsi[1] } else { saturation };
+        let intensity = if intensity.len() == 0 { &self.hsi[2] } else { intensity };
+
         let denormalize = |v: f64| -> u8 {
             let v = (v * 255.0).round();
             if v >= 255.0 { 255 } else { v as u8 }
@@ -134,7 +124,8 @@ impl Image {
         for idx in 0..width * height {
             h = hue[idx];
             s = saturation[idx];
-            i = self.hsi[2][idx];
+            i = intensity[idx]; // self.hsi[2][idx];
+
             x = i * (1.0 - s);
 
             if h >= four_third_pi { // [240, 360] degree
@@ -168,129 +159,51 @@ impl Image {
 
     }
 
-    pub fn hsi_to_rgb(&mut self) {
-        let (mut h, mut s, mut i, mut x, mut y, mut z);
-        let two_third_pi = 2.0 / 3.0 * std::f64::consts::PI;
-        let four_third_pi = 2.0 * two_third_pi;
+    pub fn auto_adjust_intensity(&mut self) {
+        let mut intensity = self.hsi[2] // denormalized intensity into [0.0, 255.0]
+            .iter()
+            .map(|i| -> f64 {
+                let v = (i * 255.0).round();
+                if v > 255.0 {255.0} else {v}
+            }).collect::<Vec<_>>();
 
-        let get_y= |i: f64, s: f64, h: f64| -> f64 { i * (1.0 + s * h.cos() / (((std::f64::consts::PI / 3.0) - h).cos())) };
-        let get_z = |i: f64, x: f64, y: f64| -> f64 {3.0 * i - (x + y)};
-
-        for idx in 0..self.hsi[0].len() {
-            h = self.hsi[0][idx];
-            s = self.hsi[1][idx];
-            i = self.hsi[2][idx];
-
-            x = i * (1.0 - s);
-
-            if h >= four_third_pi { // [240, 360] degree
-                h -= four_third_pi;
-                y = get_y(i,s,h);
-                z = get_z(i,x,y);
-
-                self.pixels[idx * 4 + 0] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8}; // todo: 最好用 & ff00 这个法子 clamp 一下
-                self.pixels[idx * 4 + 1] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8}; // todo: 想法子优化写法.
-                self.pixels[idx * 4 + 2] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-            } else if h >= two_third_pi { // [120, 240) degree
-                h -= two_third_pi;
-                y = get_y(i,s,h);
-                z = get_z(i,x,y);
-
-                self.pixels[idx * 4 + 0] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
-                self.pixels[idx * 4 + 1] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                self.pixels[idx * 4 + 2] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
-            } else { // [0, 120) degree
-                y = get_y(i,s,h);
-                z = get_z(i,x,y);
-                self.pixels[idx * 4 + 0] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                self.pixels[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
-                self.pixels[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
-            }
+        let mut intensity_dist = vec![0_f64; 256];
+        let size = intensity.len();
+        for idx in 0..size {
+            intensity_dist[ intensity[idx] as usize ] += 1.0;
         }
-    }
 
+        for i in intensity_dist.iter_mut() { // normalize number of occurrence to [0, 1]
+            *i /= size as f64
+        }
+
+        let mut current_item;
+        let mut last_item = intensity_dist[255];
+        intensity_dist[255] = 1.0;
+        for idx in (1..255).rev() {
+            current_item = intensity_dist[idx];
+            if intensity_dist[idx + 1] - last_item < 0.0 { // todo: factor this
+                intensity_dist[idx] = 0.0
+            } else {
+                intensity_dist[idx] = intensity_dist[idx + 1] - last_item
+            }
+            last_item = current_item
+        }
+        // log!("intensity distribution: {:?}", intensity_dist);
+        // intensity vector's initial purpose is to generate intensity distribution,\
+        // now I reuse it to generate the equalized intensity
+        for i in intensity.iter_mut() {
+            *i = intensity_dist[*i as usize]
+        }
+        // log!("new intensity vec: {:?}", intensity);
+
+        let hue_ref = &vec![0_f64;0];
+        let saturation_ref = &vec![0_f64;0];
+        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0)
+    }
 
     pub fn clear_hsi(&mut self) {
         self.hsi = vec![vec![], vec![], vec![]];
     }
 
-    pub fn rgb_to_hsi2(&self) -> Vec<f64> {
-        let width = self.width_bk as usize;
-        let height = self.height_bk as usize;
-        // let mut hsi =  Vec::with_capacity(width * height * 4); // vec![0_f64; w * h * 4]; // todo: I don't need the 4th alpha channel, how about w * h * 3
-        let mut hsi = vec![255_f64; width * height * 4];
-
-        let two_pi = 2.0 * std::f64::consts::PI;
-        let (mut R, mut G, mut B, mut hue);
-        for idx in 0..width * height {
-            R = self.pixels_bk[idx * 4 + 0] as f64;
-            G = self.pixels_bk[idx * 4 + 1] as f64;
-            B = self.pixels_bk[idx * 4 + 2] as f64;
-            // normalize rgb value to [0, 1]
-            R /= 255.0; // many materials say: to normalise R/G/B into [0, 1], divide each value by (R+G+B)
-            G /= 255.0; // but it's wrong, 255 should be the divisor
-            B /= 255.0;
-
-            let mut intensity = (R + G + B) / 3.0; // intensity, I increased intensity by 30% for testing the fn
-            intensity = (intensity * 1.3).min(1.0);
-            hsi[idx * 4 + 2] = intensity;
-                hue = (0.5 * ((R-G) + (R-B)) / (((R-G) * (R-G) + (R-B) * (G-B)).sqrt() + 0.001)).acos(); // adding 0.001 to avoid dividing by zero
-                hsi[idx * 4 + 1] = 1.0 - 3.0 / (R + G + B) * R.min(G).min(B);
-                if B > G {
-                    hsi[idx * 4 + 0] = two_pi - hue
-                } else {
-                    hsi[idx * 4 + 0] = hue
-                }
-        }
-        hsi
-    }
-
-    pub fn hsi_to_rgb2(&self, hsi: &[f64]) -> Vec<u8> {
-        let width = self.width_bk as usize;
-        let height = self.height_bk as usize;
-        let mut rgb = vec![0_u8; width * height * 4];
-
-        let (mut h, mut s, mut i, mut x, mut y, mut z);
-        let two_third_pi = 2.0 / 3.0 * std::f64::consts::PI;
-        let four_third_pi = 2.0 * two_third_pi;
-        for idx in 0..width * height {
-            h = hsi[idx * 4 + 0];
-            s = hsi[idx * 4 + 1];
-            i = hsi[idx * 4 + 2];
-
-            x = i * (1.0 - s);
-            y = i * (1.0 + s * h.cos() / (((std::f64::consts::PI / 3.0) - h).cos()));
-            z = 3.0 * i - (x + y);
-
-            if h >= four_third_pi { // [240, 360] degree
-                h -= four_third_pi;
-                y = i * (1.0 + s * h.cos() / (((std::f64::consts::PI / 3.0) - h).cos()));
-                z = 3.0 * i - (x + y);
-
-                rgb[idx * 4 + 0] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8}; // todo: 最好用 & ff00 这个法子 clamp 一下
-                rgb[idx * 4 + 1] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8}; // todo: 想法子优化写法.
-                rgb[idx * 4 + 2] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-            } else if h >= two_third_pi { // [120, 240) degree
-                h -= two_third_pi;
-                y = i * (1.0 + s * h.cos() / (((std::f64::consts::PI / 3.0) - h).cos()));
-                z = 3.0 * i - (x + y);
-
-                rgb[idx * 4 + 0] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
-                rgb[idx * 4 + 1] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                rgb[idx * 4 + 2] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
-            } else { // [0, 120) degree
-                rgb[idx * 4 + 0] = if y * 255.0 > 255.0 {255} else {(y * 255.0) as u8};
-                rgb[idx * 4 + 1] = if z * 255.0 > 255.0 {255} else {(z * 255.0) as u8};
-                rgb[idx * 4 + 2] = if x * 255.0 > 255.0 {255} else {(x * 255.0) as u8};
-            }
-            rgb[idx * 4 + 3] = self.pixels_bk[idx * 4 + 3]; // todo: check whether this is the right one to read, should I read pixels[] ?
-        }
-        rgb
-    }
-
-
-    pub fn hsi_test(&mut self) {
-        //let hsi = self.rgb_to_hsi();
-        //self.pixels = self.hsi_to_rgb(&hsi);
-    }
 }
