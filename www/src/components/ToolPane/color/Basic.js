@@ -31,7 +31,7 @@ export default class Basic extends Component {
         this.wasm_img.adjust_hsi(2 * Math.PI * this.state.hue / 20, this.state.saturation / 20, this.state.grayscaled, v);
         console.log('inverted: ', v);
       },
-      'hue': v => {
+      'hue': v => { // todo: each step specified as 30degree might be a good choice.
         console.log('hue changed: ', 2 * Math.PI * v / 20, '/', v); // is [-10, 10] too wide?
         this.wasm_img.adjust_hsi(2 * Math.PI * v / 20, this.state.saturation / 20, this.state.grayscaled, this.state.inverted);
       },
@@ -115,6 +115,7 @@ export default class Basic extends Component {
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Hue</div>
+              {/* todo: 最好显示 度数, 如: +/- 30度 */}
               <div style={{paddingRight: '8px'}}>{this.state.hue}</div>
             </div>
             <div style={{display: 'flex', alignItems: 'center'}}>

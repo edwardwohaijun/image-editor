@@ -19,6 +19,7 @@ class Main extends Component {
     // this.imgSrc = '/img/road.jpg';
     //this.imgSrc = '/img/stairs.jpg';
     this.imgSrc = '/img/lake.jpg';
+    // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
 
   onSelectTool = id => this.setState({selectedTool: id});

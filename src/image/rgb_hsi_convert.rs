@@ -52,6 +52,7 @@ impl Image {
         let two_pi = 2.0 * std::f64::consts::PI;
 
         let mut hue = vec![0_f64;0];
+        // todo: adding an amount or multiplying an amount, which is more appropriate?
         let new_hue = |h: f64| -> f64 {
             if inverted { (two_pi - h + h_amt).min(two_pi).max(0.0) } else { (h + h_amt).min(two_pi).max(0.0) }
         };

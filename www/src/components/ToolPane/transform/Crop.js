@@ -28,8 +28,8 @@ class Crop extends Component {
     let h = parseInt(regionInfoEle[1].innerText);
     let x = parseInt(regionInfoEle[2].innerText);
     let y = parseInt(regionInfoEle[3].innerText);
+    // validity check has been done in wasm_img.crop()
     this.props.setWidthHeight({width: w, height: h});
-    // todo: check validity of above 4 values before passing to wasm.
     this.wasm_img.crop(x, y, w, h);
     this.wasm_img.apply_change();
 

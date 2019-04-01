@@ -58,7 +58,6 @@ class Scale extends Component {
     this.changeApplied = false;
   };
 
-  // todo: close myself after clicking apply
   onApply = evt => { // todo: parse 4 values to integer before passing to scale();
     this.imgWidth = Math.round(this.imgWidth * this.state.scaleFactor / 100); // this.wasm_img.width();
     this.imgHeight = Math.round(this.imgHeight * this.state.scaleFactor / 100); // this.wasm_img.height();

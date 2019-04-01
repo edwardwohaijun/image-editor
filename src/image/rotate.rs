@@ -2,6 +2,7 @@ extern crate wasm_bindgen;
 use wasm_bindgen::prelude::*;
 use super::Image;
 
+
 #[wasm_bindgen]
 impl Image {
     pub fn rotate(&mut self, clockwise: bool) { // rotate 90
