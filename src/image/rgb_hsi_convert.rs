@@ -1,7 +1,6 @@
 extern crate wasm_bindgen;
 extern crate web_sys;
 
-use std::cmp;
 use wasm_bindgen::prelude::*;
 use super::Image;
 
@@ -154,9 +153,18 @@ impl Image {
         }
     }
 
-    // gain: contrast adjust, bias: brightness adjust
-    pub fn adjust_intensity(&mut self, gain: f64, bias: f64) {
-
+    // gain: [0, 1]: shrink contrast, [1, ]: stretch contrast
+    // bias: brightness adjust
+    pub fn manual_adjust_intensity(&mut self, gain: f64, bias: f64) {
+        let new_intensity = |v: &f64| -> f64 {
+            let new_v = *v * gain + bias;
+            new_v.min(1.0).max(0.0)
+        };
+        let intensity = self.hsi[2]
+            .iter().map(new_intensity).collect::<Vec<_>>();
+        let hue_ref = &vec![0_f64;0];
+        let saturation_ref = &vec![0_f64;0];
+        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0)
     }
 
     pub fn auto_adjust_intensity(&mut self) {
@@ -177,19 +185,16 @@ impl Image {
             *i /= size as f64
         }
 
+        // todo: write some comments on the following code
         let mut current_item;
         let mut last_item = intensity_dist[255];
         intensity_dist[255] = 1.0;
         for idx in (1..255).rev() {
             current_item = intensity_dist[idx];
-            if intensity_dist[idx + 1] - last_item < 0.0 { // todo: factor this
-                intensity_dist[idx] = 0.0
-            } else {
-                intensity_dist[idx] = intensity_dist[idx + 1] - last_item
-            }
+            intensity_dist[idx] = (intensity_dist[idx + 1] - last_item).max(0.0);
             last_item = current_item
         }
-        // log!("intensity distribution: {:?}", intensity_dist);
+
         // intensity vector's initial purpose is to generate intensity distribution,\
         // now I reuse it to generate the equalized intensity
         for i in intensity.iter_mut() {

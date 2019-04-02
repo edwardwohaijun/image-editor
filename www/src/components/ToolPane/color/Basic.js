@@ -1,5 +1,6 @@
 import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
+import ApplyButton from '../common/ApplyButton';
 
 export default class Basic extends Component {
   constructor(props) {
@@ -25,7 +26,6 @@ export default class Basic extends Component {
     };
     // when the component get mounted the first time, nothing changed yet, which is, logically, the same as change applied.
     this.changeApplied = true;
-    // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, temperature_amt: i32, grayscaled: bool, inverted: bool) {...}
   }
 
   componentWillUnmount = () => {
@@ -58,7 +58,6 @@ export default class Basic extends Component {
       return
     }
 
-    // this.op[valueType](newValue);
     this.changeApplied = false;
     this.setState({[valueType]: newValue }, () => {
       let h = this.state.hue * this.normalizeFactor.hue;
@@ -66,16 +65,16 @@ export default class Basic extends Component {
       let t = this.state.temperature * this.normalizeFactor.temperature;
       let g = this.state.grayscaled;
       let i = this.state.inverted;
+      // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, temperature_amt: i32, grayscaled: bool, inverted: bool) {...}
       this.wasm_img.adjust_hsi(h, s, t, g, i);
       this.props.redraw();
     });
-
   };
 
   onApply = () => {
     this.changeApplied = true; // this is not necessary, this component is about to be unmounted.
-    this.wasm_img.applyChange();
-    // todo: prepare to unmount myself
+    this.wasm_img.apply_change();
+    this.props.onSelectTool(''); // to unmount myself.
   };
 
   render() {
@@ -105,7 +104,7 @@ export default class Basic extends Component {
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Hue</div>
-              {/* todo: 最好显示 度数, 如: +/- 30度 */}
+              {/* todo: it'd be better to show: +/- 30 degree */}
               <div style={{paddingRight: '8px'}}>{this.state.hue}</div>
             </div>
             <div style={{display: 'flex', alignItems: 'center'}}>
@@ -116,7 +115,7 @@ export default class Basic extends Component {
                   <path d="M13.54 8.68h-9a.35.35 0 0 0 0 .69h9a.35.35 0 1 0 0-.69z"/>
                 </svg>
               </button>
-              <input type='range' id='color-hue-setter' className={hue_sat_disabled ? 'disabled' : ''}  data-value-type='hue' data-value-change="set"
+              <input type='range' id='color-hue-setter' className={hue_sat_disabled ? 'disabled' : ''} data-value-type='hue' data-value-change="set"
                      min='-10' max='10' step='1' value={this.state.hue} disabled={hue_sat_disabled} onChange={this.onChange}/>
               <button className={'resize-view-btn ' + (hue_sat_disabled ? 'disabled' : '')} data-value-type='hue' data-value-change="up"
                       disabled={hue_sat_disabled} onClick={this.onChange}>
@@ -177,13 +176,7 @@ export default class Basic extends Component {
           </div>
           </div>
 
-          <div style={{display: 'flex', justifyContent: 'space-around'}}>
-            <button className='primary-btn apply-btn' onClick={this.onApply}>
-              <svg viewBox="0 0 20 20" width="20" height="20" transform='scale(0.8, 0.8)' pointerEvents='none'>
-                <path fillRule="evenodd" fill='#FFF' d="M18.388 2L20 3.557 6.576 17.458 0 11.108 1.804 9.24l4.964 4.793L18.388 2z" />
-              </svg>
-            </button>
-          </div>
+          <ApplyButton onApply={this.onApply}/>
 
         </div>
     )}
