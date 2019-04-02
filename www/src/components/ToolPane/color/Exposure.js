@@ -79,7 +79,6 @@ export default class Exposure extends Component {
     this.setState({[valueType]: newValue}, () => {
       let c = this.state.contrast * this.normalizeFactor.contrast;
       let b = this.state.brightness * this.normalizeFactor.brightness;
-      // pub fn manual_adjust_intensity(&mut self, gain: f64, bias: f64) {...}
       this.wasm_img.manual_adjust_intensity(c, b);
       this.props.redraw();
     });
@@ -101,15 +100,18 @@ export default class Exposure extends Component {
               <div style={{paddingRight: '8px'}}>Brightness value</div>
             </div>
             <div style={{display: 'flex', alignItems: 'center'}}>
-              <button className='resize-view-btn btn-plus-minus' onClick={this.onChange} data-value-type='brightness' data-value-change="down">
+              <button className={'resize-view-btn btn-plus-minus ' + (autoAdjustContrast ? 'disabled' : '')} disabled={autoAdjustContrast}
+                      onClick={this.onChange} data-value-type='brightness' data-value-change="down">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
                   <path stroke="#525562" d="M9 0a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 17.36A8.34 8.34 0 1 1 17.36 9 8.35 8.35 0 0 1 9 17.36z"/>
                   <path d="M13.54 8.68h-9a.35.35 0 0 0 0 .69h9a.35.35 0 1 0 0-.69z"/>
                 </svg>
               </button>
-              <input type='range' min='-10' max='10' step='1' value={this.state.brightness}
+              <input type='range' className={autoAdjustContrast ? 'disabled' : ''} disabled={autoAdjustContrast}
+                     min='-10' max='10' step='1' value={this.state.brightness}
                      data-value-type='brightness' data-value-change="set" onChange={this.onChange} />
-              <button className='resize-view-btn btn-plus-minus' data-value-type='brightness' data-value-change="up" onClick={this.onChange}>
+              <button className={'resize-view-btn btn-plus-minus ' + (autoAdjustContrast ? 'disabled' : '')} disabled={autoAdjustContrast}
+                      data-value-type='brightness' data-value-change="up" onClick={this.onChange}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="white" viewBox="-1 -2 23 23" pointerEvents='none'>
                   <path stroke="#525562" d="M10.39 0a10.39 10.39 0 1 0 10.38 10.39A10.4 10.4 0 0 0 10.39 0zm0 20A9.59 9.59 0 1 1 20 10.39 9.6 9.6 0 0 1 10.39 20z"/>
                   <path d="M15.38 10h-4.59V5.59a.4.4 0 0 0-.8 0V10h-4.6a.4.4 0 1 0 0 .8H10v4.79a.4.4 0 0 0 .8 0v-4.8h4.59a.4.4 0 1 0 0-.8z"/>
