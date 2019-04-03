@@ -1,5 +1,4 @@
 import imgObj from '../../common/imgObj'
-import {memory} from "image-editor/image_editor_bg";
 import React, {Component} from 'react';
 import Basic from './Basic';
 import Exposure from './Exposure';
@@ -23,15 +22,7 @@ class ColorTool extends Component {
 
   componentDidMount = () => this.wasm_img.rgb_to_hsi();
   componentWillUnmount = () => this.wasm_img.clear_hsi();
-
   componentDidUpdate = () => { };
-
-  testHSI = () => {
-    // let wasm_img = imgObj.get_wasm_img();
-    this.wasm_img.rgb_to_hsi();
-    this.wasm_img.adjust_hsi(0.0, 0.8, 0.25);
-    this.props.redraw()
-  };
 
   render() {
     return (
