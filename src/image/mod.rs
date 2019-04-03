@@ -18,6 +18,7 @@ mod utils;
 // mod rgb_to_grayscale;
 mod transform_tool;
 mod color_tool;
+mod filter_tool;
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {

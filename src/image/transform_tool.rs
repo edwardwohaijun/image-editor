@@ -24,8 +24,6 @@ impl Image {
             top_y = (self.height_bk - height) as i32
         }
 
-        // log!("img w/h: {:?}/{:?}, crop x/y/w/h: {:?}/{:?}/{:?}/{:?}: ", self.width, self.height, top_x, top_y, width, height);
-
         let mut new_pixels = vec![0_u8; (width * height * 4) as usize];
         let mut old_x;
         let mut old_y;

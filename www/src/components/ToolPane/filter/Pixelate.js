@@ -7,14 +7,12 @@ export default class Pixelate extends Component {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
-    };
-
-    this.sliderRange = {
-      contrast: [1, 20, 1], // [min, max, step]
-      brightness: [10, 10, 1],
+      blockSize: 7,
     };
     this.changeApplied = true;
   }
+
+  updateBlockSize = blockSize => this.setState({blockSize});
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {
@@ -23,16 +21,25 @@ export default class Pixelate extends Component {
     }
   };
 
+  test_pixelate = () => {
+    this.wasm_img.pixelate(450, 250, 200, 200, this.state.blockSize);
+    this.props.redraw();
+  };
+
   onApply = () => {
     this.changeApplied = true; // this is not necessary, this component is about to be unmounted.
     this.wasm_img.apply_change();
     this.props.onSelectTool(''); // to unmount myself.
   };
 
+// define/draw a pixelatedRect, once component get mounted, draw the pixelated region
+// then let user to move/set the region, after mouse onKeyUp, redraw.
+// clicking apply applies the effect and unmount the component
+// the default rect should have a minimum w/h, in case the input img is smaller than this, use img size as rect's w/h
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-          Pixelate
+          <button onClick={this.test_pixelate}>Pixelate</button>
           <ApplyButton onApply={this.onApply}/>
         </div>
     )}

@@ -23,12 +23,12 @@ class FilterTool extends Component {
     }
     this.setState({selectedTool: toolID});
   };
-  
-/*
+
+  // todo: it's better to have hsi ready when the app is loaded
+  // too many functions require hsi, it's not efficient to generate/clear when switching from functionA to functionB
   componentDidMount = () => this.wasm_img.rgb_to_hsi();
   componentWillUnmount = () => this.wasm_img.clear_hsi();
   componentDidUpdate = () => { };
-  */
 
   render() {
     return (
