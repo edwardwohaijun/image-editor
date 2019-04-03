@@ -7,7 +7,7 @@ export default class Pixelate extends Component {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
-      blockSize: 7,
+      blockSize: 9,
     };
     this.changeApplied = true;
   }
@@ -21,8 +21,9 @@ export default class Pixelate extends Component {
     }
   };
 
+  // don't forget the edge case testing
   test_pixelate = () => {
-    this.wasm_img.pixelate(450, 250, 200, 200, this.state.blockSize);
+    this.wasm_img.pixelate(450, 250, 170, 240, this.state.blockSize);
     this.props.redraw();
   };
 

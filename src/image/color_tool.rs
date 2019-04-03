@@ -98,6 +98,7 @@ impl Image {
 
     // http://eng.usf.edu/~hady/courses/cap5400/rgb-to-hsi.pdf
     // how to make this accessible by other mod without exposing to JS
+    // todo: move this into utils
     pub fn hsi_to_rgb(&mut self, hue: &[f64], saturation: &[f64], intensity: &[f64], t_amt: i32) {
         let width = self.width as usize;
         let height = self.height as usize;
@@ -150,7 +151,6 @@ impl Image {
                 self.pixels[idx * 4 + 2] = denormalize(x - t_amt);
             }
         }
-        log!("hsi_to_rgb done, {}", 1);
     }
 
     // gain: [0, 1]: shrink contrast, [1, ]: stretch contrast

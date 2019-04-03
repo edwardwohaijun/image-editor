@@ -93,7 +93,6 @@ impl Image {
         self.height = self.height_bk;
     }
 
-
     // looks like DCT is for JPEG, what about PNG/GIF?
     fn initialise_DCT() -> (Vec<f64>, Vec<f64>) {
         const N: usize = 8;
