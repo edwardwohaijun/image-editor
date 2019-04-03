@@ -11,11 +11,9 @@ macro_rules! log {
     }
 }
 
-// todo: rename to sth else, all HSI related fn are included in this module
-
 #[wasm_bindgen]
 impl Image {
-    pub fn rgb_to_hsi(&mut self) { // it's better to hide this fn, get called implicitly
+    pub fn rgb_to_hsi(&mut self) {
         let width = self.width as usize;
         let height = self.height as usize;
         let size = width * height;

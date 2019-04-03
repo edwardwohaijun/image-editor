@@ -8,15 +8,16 @@ use std::ops::Add;
 use std::default::Default;
 
 mod utils;
-mod scale;
-mod rotate;
-mod compress;
-mod set_contrast;
-mod set_brightness;
-mod crop;
-mod flip;
-mod rgb_to_grayscale;
-mod rgb_hsi_convert;
+// mod scale;
+// mod rotate;
+// mod compress;
+// mod set_contrast;
+// mod set_brightness;
+// mod crop;
+// mod flip;
+// mod rgb_to_grayscale;
+mod transform_tool;
+mod color_tool;
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
