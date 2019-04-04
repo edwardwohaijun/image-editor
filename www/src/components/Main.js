@@ -72,7 +72,7 @@ class Main extends Component {
     canvas.style.left = left + 'px';
     canvas.style.top = top + 'px';
 
-    if (this.props.cropHandlersVisible) {
+    if (this.props.cropHandlersVisible || this.props.pixelateHandlersVisible) {
       let handlers = document.getElementById('canvas-handler');
       handlers.style.left = left - 9 + 20 + 'px'; // 9 is imgHandler's radius, canvas has 20px margin
       handlers.style.top = top - 9 + 20 + 'px';
@@ -177,7 +177,7 @@ class Main extends Component {
 const mapStateToProps = state => ({
       zoomRatio: state.imgStat.get('zoomRatio'),
       cropHandlersVisible: state.cropHandlersVisible,
-      //scaleHandlersVisible: state.scaleHandlersVisible
+      pixelateHandlersVisible: state.pixelateHandlers.get('visible')
 });
 const mapDispatchToProps = dispatch => bindActionCreators({setZoomRatio, setWidthHeight}, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(Main);

@@ -10,14 +10,12 @@ const handlerCommonProps = {
   height: '18',
 };
 
-class CropHandlers extends Component {
+class PixelateHandlers extends Component {
   constructor(props) {
     super(props);
     this.state = {
       selectedHandler: '',
     };
-
-    this.cropRegionInfo = null;
 
     this.canvas = document.getElementById('canvas');
     this.canvasWidth = Math.round(props.imgWidth * props.zoomRatio); // this.canvas.width;
@@ -36,26 +34,7 @@ class CropHandlers extends Component {
     this.handlerMovingY = 0;
   }
 
-  setCropRegionInfo = () => {
-    // handlerWidth/Height is zoomRatio applied, we need to get the original w/h by dividing them by ratio,
-    // but: width * ratio / ratio !== width, there are some rounding error.
-    // When this component get mounted, handlerWidth/Height are the same as original image's w/h, thus, read directly from wasm_img.
-    let regionInfoEle = this.cropRegionInfo.getElementsByClassName('canvas-handler-region-info');
-    let w = regionInfoEle[0];
-    let h = regionInfoEle[1];
-    let x = regionInfoEle[2];
-    let y = regionInfoEle[3];
-
-    let ratio = this.props.zoomRatio;
-    w.innerText = Math.round(this.handlerWidth / ratio) + ' px';
-    h.innerText = Math.round(this.handlerHeight / ratio) + ' px';
-    x.innerText = Math.round((this.handlerX - 9) / ratio);
-    y.innerText = Math.round((this.handlerY - 9) / ratio);
-  };
-
-  componentDidMount = () => {
-    this.cropRegionInfo = document.getElementById('crop-region-info');
-  };
+  componentDidMount = () => { };
 
   componentDidUpdate = prevProps => { // todo: after rounding, the final x/y/w/h might exceed boundary
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;
@@ -65,12 +44,12 @@ class CropHandlers extends Component {
     this.handlerHeight = Math.round(this.handlerHeight * resizeRatio);
     this.canvasWidth = Math.round(this.canvasWidth * resizeRatio);
     this.canvasHeight = Math.round(this.canvasHeight * resizeRatio);
-    this.setPosition()
+    this.setPosition();
   };
 
   // todo: 确保 handlerX, Y的最小值是0, 用 min()
   setPosition = () => { // do I really need those ugly '-9' ???
-     let imgHandlersXY = [ // x/y position of 4 img handlers
+    let imgHandlersXY = [ // x/y position of 4 img handlers
       [this.handlerX - 9, this.handlerY - 9], // top-left
       [this.handlerX - 9 + this.handlerWidth, this.handlerY - 9], // top-right
       [this.handlerX - 9 + this.handlerWidth, this.handlerY - 9 + this.handlerHeight], // bottom-right
@@ -135,9 +114,8 @@ class CropHandlers extends Component {
     rect.style.cursor = 'grab';
 
     if (this.state.selectedHandler === '') {
-      return
+      return // to avoid unnecessary rendering when mouse moving out of canvas
     }
-
     this.setState({selectedHandler: ''});
   };
 
@@ -222,7 +200,6 @@ class CropHandlers extends Component {
 
     this.handlerMovingX = x;
     this.handlerMovingY = y;
-    this.setCropRegionInfo();
     this.setPosition()
   };
 
@@ -240,7 +217,6 @@ class CropHandlers extends Component {
       width: this.canvasWidth + 18, // 18 is imgHandler diameter
       height: this.canvasHeight + 18,
     };
-    console.log('svg style: ', svgStyle);
 
     let pathAttribute = composePath( // when canvasHandler get mounted, its outerRect and innerRect are the same
         {x: 9, y: 9, width, height},
@@ -278,7 +254,7 @@ const mapStateToProps = state => ({
   imgHeight: state.imgStat.get('height'),
 });
 // const mapDispatchToProps = dispatch => bindActionCreators({setWidthHeight}, dispatch);
-export default connect(mapStateToProps, null)(CropHandlers);
+export default connect(mapStateToProps, null)(PixelateHandlers);
 
 
 const composePath = (outer, inner) => {
@@ -286,22 +262,3 @@ const composePath = (outer, inner) => {
   let innerRect = 'M' + inner.x + ','  + inner.y + ' v' + inner.height + ' h' + inner.width + ' v-' + inner.height + ' z';
   return outerRect + innerRect
 };
-
-// only decompose innerRect
-/*
-const decomposePath = str => {
-  let innerRec = str.split('z')[1];
-  let parts = innerRec.split(' ');
-  let xy = parts[0].substring(1).split(',');
-  let pathX = parseInt(xy[0]);
-  let pathY = parseInt(xy[1]);
-
-  let height = parts[1];
-  height = parseInt(height.substring(1));
-
-  let width = parts[2];
-  width = parseInt(width.substring(1));
-
-  return {pathX, pathY, width, height}
-};
-*/

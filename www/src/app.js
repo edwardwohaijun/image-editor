@@ -1,9 +1,3 @@
-// import * as wasm from "image-editor";
-// import {Image} from "image-editor/image_editor";
-// import { memory } from "image-editor/image_editor_bg";
-
-// import {Image} from "wasm-greet/wasm_greet";
-// import { memory } from "wasm-greet/wasm_greet_bg";
 import {Provider} from 'react-redux';
 import thunk from 'redux-thunk';
 import {createStore, applyMiddleware, compose} from 'redux';
@@ -29,14 +23,11 @@ let initialState = {
       // size: 0,
     }),
 
-    cropHandlersVisible: false, // the 8 points around canvas, with which you can scale up/down, set region to crop. For other operations, hide it
-    // scaleHandlersVisible: false, depreciated
-    /*
-    handlerVisible: fromJS({
-      crop: false,
-      scale: false,
-    })
-    */
+    cropHandlersVisible: false, // the 8 points around canvas, with which you can scale up/down, set region to crop.
+    pixelateHandlers: fromJS({
+      visible: false,  // similar to above
+      position: {x: 0, y: 0, width: 0, height: 0}, // pixelateHandler is part of Canvas component, whereas, Filter/Pixelate is another independent component, \
+    }), // and they need to share these 4 parameters.
 };
 
 let store = createStore(reducers, initialState, compose(
@@ -51,7 +42,6 @@ class App extends Component {
       loading: false,
     };
   }
-
   render() { return <Main />}
 }
 
