@@ -27,6 +27,7 @@ impl Image {
         let mut p_height = p_height.max(1).min(img_height);
 
         if top_x + p_width > img_width as u32 || top_y + p_height > img_height as u32 {
+            // validation check is done in JS, Rust check is to prevent panic.
             return
         }
 

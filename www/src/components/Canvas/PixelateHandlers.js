@@ -26,7 +26,7 @@ class PixelateHandlers extends Component {
     this.svg = null;
 
     // following are props of imgHandlers: an outer rectangle which has the same width/height as the canvas,
-    // an inner rectangle which has 4 blue circles as handler, with which you can drag to set the crop region.
+    // an inner rectangle which has 4 blue circles as handler, with which you can drag to set the region.
     // The outer rect's position/width/height are fixed, inner rect can be moved/resize.
     this.handlerX = 9; // the top-left coordinate of inner rect. This coordinate is relative to parent svg, not to browser viewport
     this.handlerY = 9; // 9 is the imgHandler's radius, this value make 4 imgHandler's center sit right on the corner of the underlying canvas
@@ -53,7 +53,7 @@ class PixelateHandlers extends Component {
 
   componentDidMount = () => this.setPixelateRegion();
 
-  componentDidUpdate = prevProps => { // todo: after rounding, the final x/y/w/h might exceed boundary
+  componentDidUpdate = prevProps => { // after rounding, the final x/y/w/h might exceed boundary, I leave it to Pixelate component to handle
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;
     this.handlerX = Math.round((this.handlerX - 9) * resizeRatio + 9); // if we don't do this "-9  + 9", a series of zoom-in/out will accumulate the rounding error, \
     this.handlerY = Math.round((this.handlerY - 9) * resizeRatio + 9); // causing handlerX/Y to drift away
@@ -65,7 +65,6 @@ class PixelateHandlers extends Component {
     this.setPixelateRegion()
   };
 
-  // todo: 确保 handlerX, Y的最小值是0, 用 min()
   setPosition = () => { // do I really need those ugly '-9' ???
     let imgHandlersXY = [ // x/y position of 4 img handlers
       [this.handlerX - 9, this.handlerY - 9], // top-left
@@ -147,7 +146,7 @@ class PixelateHandlers extends Component {
     let deltaX = x - this.handlerMovingX;
     let deltaY = y - this.handlerMovingY;
 
-    let x2 = this.handlerX; // in case users move the crop region out of bound,
+    let x2 = this.handlerX; // in case users move the region out of bound or reached the minimum region width/height,
     let y2 = this.handlerY; // we need to restore the original value.
     let w = this.handlerWidth;
     let h = this.handlerHeight;
@@ -198,7 +197,7 @@ class PixelateHandlers extends Component {
         break;
       }
 
-      case 8: { // move the crop-region
+      case 8: { // move the region
         this.handlerX += deltaX;
         this.handlerY += deltaY;
         break;
@@ -209,7 +208,10 @@ class PixelateHandlers extends Component {
     if (this.handlerX - 9 + this.handlerWidth > this.canvasWidth
     || this.handlerX - 9 < 0
     || this.handlerY - 9 + this.handlerHeight > this.canvasHeight
-    || this.handlerY - 9 < 0) {
+    || this.handlerY - 9 < 0
+    || this.handlerWidth < 20 // width/height has reached the minimum value. If the img's width <= 20px, you need to zoom-in, then set width/height
+    || this.handlerHeight < 20) // todo: make 20 a constant
+    {
       this.handlerX = x2;
       this.handlerY = y2;
       this.handlerWidth = w;

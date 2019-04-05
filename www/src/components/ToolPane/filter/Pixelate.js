@@ -12,27 +12,58 @@ class Pixelate extends Component {
     this.state = {
       blockSize: 7, // min: 3, max: 11, step: 2
     };
+    this.region = {
+      x: 0, y: 0, width: 0, height: 0,
+    };
     this.changeApplied = true;
   }
 
+  pixelate = () => {
+    // validity check.
+    // x/y/w/h are rounded before passed from PixelateHandlers, it's possible: x + width > imgWidth
+    let {x, y, width, height} = this.region;
+    let imgWidth = this.props.imgWidth;
+    let imgHeight = this.props.imgHeight;
+    x = Math.min(Math.max(x, 0), imgWidth - 1);
+    y = Math.min(Math.max(y, 0), imgHeight - 1);
+    width = Math.min(Math.max(width, 1), imgWidth);
+    height = Math.min(Math.max(height, 1), imgHeight);
+
+    if (x + width > imgWidth) {
+      width -= x + width - imgWidth // In theory, it's still possible after subtract, width became negative, \
+    } // but, not in practice, width/height has minimum value(20px), and the diff between 'x+width' and imgWidth is just 1px because of rounding
+
+    if (y + height > imgHeight) {
+      height -= y + height - imgHeight
+    }
+
+    this.wasm_img.pixelate(x, y, width, height, this.state.blockSize);
+    this.props.redraw();
+  };
+
+  componentDidMount = () => this.props.showHandler(true);
+
   componentWillUnmount = () => {
-    this.props.showPixelateHandlers(false);
+    this.props.showHandler(false);
     if (!this.changeApplied) {
       this.wasm_img.discard_change();
       this.props.redraw();
     }
   };
 
-  componentDidMount = () => this.props.showPixelateHandlers(true);
+  componentDidUpdate = () => { // this only update is handler position, triggered from PixelHandlers by moving handlers
+    let x = this.props.position.get('x');
+    let y = this.props.position.get('y');
+    let width = this.props.position.get('width');
+    let height = this.props.position.get('height');
 
-  componentDidUpdate = () => {
+    if (x === this.region.x && y === this.region.y && width === this.region.width && height === this.region.height) {
+      return
+    }
+
+    this.region.x = x; this.region.y = y; this.region.width = width; this.region.height = height;
     this.changeApplied = false;
-    let x = this.props.pixelatePosition.get('x');
-    let y = this.props.pixelatePosition.get('y');
-    let width = this.props.pixelatePosition.get('width');
-    let height = this.props.pixelatePosition.get('height');
-    this.wasm_img.pixelate(x, y, width, height, this.state.blockSize);
-    this.props.redraw();
+    this.pixelate();
   };
 
   onChange = evt => {
@@ -59,10 +90,10 @@ class Pixelate extends Component {
       return
     }
 
-    this.changeApplied = false;
-    this.setState({blockSize});
-    this.wasm_img.pixelate(750, 50, 150, 550, blockSize);
-    this.props.redraw();
+    this.setState({blockSize}, () => {
+      this.changeApplied = false;
+      this.pixelate()
+    });
   };
 
   onApply = () => {
@@ -72,16 +103,12 @@ class Pixelate extends Component {
     this.props.onSelectTool(''); // to unmount myself.
   };
 
-// define/draw a pixelatedRect, once component get mounted, draw the pixelated region
-// then let user to move/set the region, after mouse onKeyUp, redraw.
-// clicking apply applies the effect and unmount the component
 // the default rect should have a minimum w/h, in case the input img is smaller than this, use img size as rect's w/h
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-          {/* <button onClick={this.test_pixelate}>Pixelate</button> */}
 
-          <div style={{display: 'flex', alignItems: 'center'}}>
+          <div style={{display: 'flex', alignItems: 'center', marginBottom: '18px'}}>
             <button className={'resize-view-btn btn-plus-minus'} data-value-change="down" onClick={this.onChange}>
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
                 <path stroke="#525562" d="M9 0a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 17.36A8.34 8.34 0 1 1 17.36 9 8.35 8.35 0 0 1 9 17.36z"/>
@@ -102,11 +129,10 @@ class Pixelate extends Component {
     )}
 }
 
-
 const mapStateToProps = state => ({
-  pixelateHandlersVisible: state.pixelateHandlers.get('visible'),
-  pixelatePosition: state.pixelateHandlers.get('position')
+  position: state.pixelateHandlers.get('position'),
+  imgWidth: state.imgStat.get('width'),
+  imgHeight: state.imgStat.get('height'),
 });
-const mapDispatchToProps = dispatch => bindActionCreators({showPixelateHandlers}, dispatch);
+const mapDispatchToProps = dispatch => bindActionCreators({showHandler: showPixelateHandlers}, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(Pixelate);
-

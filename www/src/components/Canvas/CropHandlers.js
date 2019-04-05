@@ -212,7 +212,10 @@ class CropHandlers extends Component {
     if (this.handlerX - 9 + this.handlerWidth > this.canvasWidth
     || this.handlerX - 9 < 0
     || this.handlerY - 9 + this.handlerHeight > this.canvasHeight
-    || this.handlerY - 9 < 0) {
+    || this.handlerY - 9 < 0
+    || this.handlerWidth < 20 // width/height has reached the minimum value. If the img's width <= 20px, you can zoom-in, then set width/height
+    || this.handlerHeight < 20) // todo: make 20 a constant
+    {
       this.handlerX = x2;
       this.handlerY = y2;
       this.handlerWidth = w;
