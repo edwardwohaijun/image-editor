@@ -30,6 +30,8 @@ impl Image {
             return
         }
 
+        self.restore_area();
+
         let mut x; // X/Y position of pixelated region in original img
         let mut y;
 
@@ -62,7 +64,6 @@ impl Image {
                         self.pixels_bk[ (*y * img_width as usize + *x) * 4 + offset ] as u32 + sum
                     });
 
-                    // block_avg = block_position.iter().fold(0_u32, block_sum);
                     block_avg = (block_avg as f64 / (block_size * block_size) as f64).round() as u32;
 
                     for (x, y) in block_position.iter() {
@@ -71,9 +72,29 @@ impl Image {
                 }
             }
         }
-        // self.hsi_to_rgb(&new_hue, &new_saturation, &new_intensity, 0);
-        // todo: don't forget to re-generate HSI, IS THIS REALLY NECESSARY????
+        self.restore_rect = (top_x, top_y, p_width, p_height)
+        // we need to regenerate HSI, after user applying the changes, but it have to be invoked in JS
     }
 
+    // when user move the pixelatedRegion, we need to restore the previous region to the original state, before applying the new changes.
+    fn restore_area(&mut self) {
+        let (x, y, width, height) = self.restore_rect;
+        if x == 0 && y == 0 && width == 0 && height == 0 {
+            return
+        }
+
+        let img_width = self.width;
+        let img_height = self.height;
+        let mut idx: usize;
+
+        for row in y..(y+height) {
+            for col in x..(x+width) {
+                idx = (row * img_width + col) as usize;
+                self.pixels[idx * 4 + 0] = self.pixels_bk[idx * 4 + 0];
+                self.pixels[idx * 4 + 1] = self.pixels_bk[idx * 4 + 1];
+                self.pixels[idx * 4 + 2] = self.pixels_bk[idx * 4 + 2];
+            }
+        }
+    }
 
 }

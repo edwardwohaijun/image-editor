@@ -37,6 +37,8 @@ pub struct Image {
     width_bk: u32,
     height_bk: u32,
 
+    restore_rect: (u32, u32, u32, u32), // some actions, like Pixelate, need to restore the original pixelated area before running.
+
     hsi: Vec<Vec<f64>>, //  elements: Hue, Saturation, Intensity
     dct: (Vec<f64>, Vec<f64>), // depreciated
 }
@@ -54,6 +56,8 @@ impl Image {
             pixels_bk: buf,
             width_bk: w,
             height_bk: h,
+
+            restore_rect: (0, 0, 0, 0),
 
             hsi: vec![vec![], vec![], vec![]],
             dct: Self::initialise_DCT(),
