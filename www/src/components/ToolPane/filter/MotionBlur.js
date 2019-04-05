@@ -2,6 +2,7 @@ import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
 import ApplyButton from '../common/ApplyButton';
 
+// https://graphics.tudelft.nl/Publications-new/2018/LSE18/Motion%20Blur_CRC.pdf
 export default class MotionBlur extends Component {
   constructor(props) {
     super(props);

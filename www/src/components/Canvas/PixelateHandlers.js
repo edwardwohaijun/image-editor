@@ -2,50 +2,37 @@ import React, {Component} from 'react';
 import {connect} from "react-redux";
 import { bindActionCreators } from 'redux';
 import {setPixelateHandlersPosition} from '../../actions'
-
-const circleImg = 'data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxOHB4IiBoZWlnaHQ9IjE4cHgiIHZlcnNpb249IjEuMSI+PGNpcmNsZSBjeD0iOSIgY3k9IjkiIHI9IjUiIHN0cm9rZT0iI2ZmZiIgZmlsbD0iIzAwN2RmYyIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+';
-const handlerCommonProps = {
-  xmlnsXlink: "http://www.w3.org/1999/xlink",
-  xlinkHref: circleImg,
-  preserveAspectRatio: "none",
-  width: '18',
-  height: '18',
-};
+import {CIRCLE_RADIUS, HANDLER_COMMON_PROPS, DEF_HANDLER_RECT_WIDTH, DEF_HANDLER_RECT_HEIGHT, MIN_HANDLER_RECT_WIDTH, MIN_HANDLER_RECT_HEIGHT} from '../../constants/handler';
 
 class PixelateHandlers extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      selectedHandler: '',
-    };
-
+    this.state = { selectedHandler: '' };
     this.canvas = document.getElementById('canvas');
-    this.canvasWidth = Math.round(props.imgWidth * props.zoomRatio); // this.canvas.width;
-    this.canvasHeight = Math.round(props.imgHeight * props.zoomRatio); // this.canvas.height;
-    this.canvasBbox = this.canvas.getBoundingClientRect(); // canvas element already loaded when canvasHandler is loaded
+    this.canvasWidth = Math.round(props.imgWidth * props.zoomRatio);
+    this.canvasHeight = Math.round(props.imgHeight * props.zoomRatio);
     this.svg = null;
 
+// todo: too much "this.handlerX - CIRCLE_RADIUS", do sth to declutter
     // following are props of imgHandlers: an outer rectangle which has the same width/height as the canvas,
     // an inner rectangle which has 4 blue circles as handler, with which you can drag to set the region.
     // The outer rect's position/width/height are fixed, inner rect can be moved/resize.
-    this.handlerX = 9; // the top-left coordinate of inner rect. This coordinate is relative to parent svg, not to browser viewport
-    this.handlerY = 9; // 9 is the imgHandler's radius, this value make 4 imgHandler's center sit right on the corner of the underlying canvas
-    this.handlerWidth = this.canvasWidth; // this.canvasBbox.width; // inner rect's width and height
-    this.handlerHeight = this.canvasHeight; // this.canvasBbox.height; // the default value is the same as the underlying canvas
+    this.handlerWidth = Math.min(this.canvasWidth, DEF_HANDLER_RECT_WIDTH); // inner rect's width and height, \
+    this.handlerHeight = Math.min(this.canvasHeight, DEF_HANDLER_RECT_HEIGHT); // default value is fixed(read from a constant), unless the canvas' width is less than that
 
-    this.handlerX += (this.canvasWidth - 200) / 2; // todo: 200 是写死的, 如果img size小于200, 还需要设为imgSize, 尚未做呢.
-    this.handlerY += (this.canvasHeight - 200) / 2;
-    this.handlerWidth = 200;
-    this.handlerHeight = 200;
+    // the top-left coordinate of inner rect. This coordinate is relative to parent svg, not to browser viewport, \
+    // it's also the top-left circle <image />'s center position
+    this.handlerX = CIRCLE_RADIUS + (this.canvasWidth - DEF_HANDLER_RECT_WIDTH) / 2; // todo: test this by making a 16px image
+    this.handlerY = CIRCLE_RADIUS + (this.canvasHeight - DEF_HANDLER_RECT_HEIGHT) / 2;
 
     this.handlerMovingX = 0; // when a imgHandler's being dragged, MovingX/Y reflect their real-time position
     this.handlerMovingY = 0;
   }
 
-  setPixelateRegion = () => { // todo: how to avoid unnecessary call
+  setPixelateRegion = () => { // todo: do sth to avoid unnecessary call
     let ratio = this.props.zoomRatio;
-    let x = Math.round((this.handlerX - 9) / ratio);
-    let y = Math.round((this.handlerY - 9) / ratio);
+    let x = Math.round((this.handlerX - CIRCLE_RADIUS) / ratio);
+    let y = Math.round((this.handlerY - CIRCLE_RADIUS) / ratio);
     let width = Math.round(this.handlerWidth / ratio);
     let height = Math.round(this.handlerHeight / ratio);
     this.props.setPixelateHandlersPosition({x, y, width, height});
@@ -55,8 +42,8 @@ class PixelateHandlers extends Component {
 
   componentDidUpdate = prevProps => { // after rounding, the final x/y/w/h might exceed boundary, I leave it to Pixelate component to handle
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;
-    this.handlerX = Math.round((this.handlerX - 9) * resizeRatio + 9); // if we don't do this "-9  + 9", a series of zoom-in/out will accumulate the rounding error, \
-    this.handlerY = Math.round((this.handlerY - 9) * resizeRatio + 9); // causing handlerX/Y to drift away
+    this.handlerX = Math.round((this.handlerX - CIRCLE_RADIUS) * resizeRatio + CIRCLE_RADIUS); // if we don't do this "-CIRCLE_RADIUS  +CIRCLE_RADIUS", a series of zoom-in/out will accumulate the rounding error, \
+    this.handlerY = Math.round((this.handlerY - CIRCLE_RADIUS) * resizeRatio + CIRCLE_RADIUS); // causing handlerX/Y to drift away
     this.handlerWidth = Math.round(this.handlerWidth * resizeRatio);
     this.handlerHeight = Math.round(this.handlerHeight * resizeRatio);
     this.canvasWidth = Math.round(this.canvasWidth * resizeRatio);
@@ -65,17 +52,22 @@ class PixelateHandlers extends Component {
     this.setPixelateRegion()
   };
 
-  setPosition = () => { // do I really need those ugly '-9' ???
-    let imgHandlersXY = [ // x/y position of 4 img handlers
-      [this.handlerX - 9, this.handlerY - 9], // top-left
-      [this.handlerX - 9 + this.handlerWidth, this.handlerY - 9], // top-right
-      [this.handlerX - 9 + this.handlerWidth, this.handlerY - 9 + this.handlerHeight], // bottom-right
-      [this.handlerX - 9, this.handlerY - 9 + this.handlerHeight], // bottom-left
+  setPosition = () => {
+    let xOffset = this.handlerX - CIRCLE_RADIUS;
+    let yOffset = this.handlerY - CIRCLE_RADIUS;
+    let w = this.handlerWidth;
+    let h = this.handlerHeight;
 
-      [this.handlerX - 9 + this.handlerWidth * 0.5, this.handlerY - 9], // top-middle
-      [this.handlerX - 9 + this.handlerWidth, this.handlerY - 9 + this.handlerHeight * 0.5], // right-middle
-      [this.handlerX - 9 + this.handlerWidth * 0.5, this.handlerY - 9 + this.handlerHeight], // bottom-middle
-      [this.handlerX - 9, this.handlerY - 9 + this.handlerHeight * 0.5], // left-middle
+    let imgHandlersXY = [ // x/y position of 4 img handlers
+      [xOffset, yOffset], // top-left
+      [xOffset + w, yOffset], // top-right
+      [xOffset + w, yOffset + h], // bottom-right
+      [xOffset, yOffset + h], // bottom-left
+
+      [xOffset + w * 0.5, yOffset], // top-middle
+      [xOffset + w, yOffset + h * 0.5], // right-middle
+      [xOffset + w * 0.5, yOffset + h], // bottom-middle
+      [xOffset, yOffset + h * 0.5], // left-middle
     ];
 
     let imgHandlers = this.svg.getElementsByTagName('image');
@@ -86,16 +78,16 @@ class PixelateHandlers extends Component {
 
     let pathEle = this.svg.getElementsByTagName('path')[0];
     let path = composePath(
-        {x: 9, y: 9, width: this.canvasWidth, height: this.canvasHeight},
+        {x: CIRCLE_RADIUS, y: CIRCLE_RADIUS, width: this.canvasWidth, height: this.canvasHeight},
         {x: this.handlerX, y: this.handlerY, width: this.handlerWidth, height: this.handlerHeight}
     );
     pathEle.setAttribute('d', path);
 
     let grabbingEle = this.svg.getElementsByTagName('rect')[0];
-    grabbingEle.setAttribute('x', this.handlerX + 9);
-    grabbingEle.setAttribute('y', this.handlerY + 9);
-    grabbingEle.setAttribute('width', this.handlerWidth - 18);
-    grabbingEle.setAttribute('height', this.handlerHeight - 18)
+    grabbingEle.setAttribute('x', this.handlerX + CIRCLE_RADIUS);
+    grabbingEle.setAttribute('y', this.handlerY + CIRCLE_RADIUS);
+    grabbingEle.setAttribute('width', this.handlerWidth - CIRCLE_RADIUS * 2);
+    grabbingEle.setAttribute('height', this.handlerHeight - CIRCLE_RADIUS * 2)
   };
 
   onMouseDown = evt => {
@@ -205,12 +197,12 @@ class PixelateHandlers extends Component {
     }
 
     // out of canvas bound
-    if (this.handlerX - 9 + this.handlerWidth > this.canvasWidth
-    || this.handlerX - 9 < 0
-    || this.handlerY - 9 + this.handlerHeight > this.canvasHeight
-    || this.handlerY - 9 < 0
-    || this.handlerWidth < 20 // width/height has reached the minimum value. If the img's width <= 20px, you need to zoom-in, then set width/height
-    || this.handlerHeight < 20) // todo: make 20 a constant
+    if (this.handlerX - CIRCLE_RADIUS + this.handlerWidth > this.canvasWidth
+    || this.handlerX - CIRCLE_RADIUS < 0
+    || this.handlerY - CIRCLE_RADIUS + this.handlerHeight > this.canvasHeight
+    || this.handlerY - CIRCLE_RADIUS < 0
+    || this.handlerWidth < MIN_HANDLER_RECT_WIDTH // width/height has reached the minimum value.
+    || this.handlerHeight < MIN_HANDLER_RECT_HEIGHT) // If the img's width/height is by nature less than 20px, you need to zoom-in, then set width/height
     {
       this.handlerX = x2;
       this.handlerY = y2;
@@ -229,43 +221,43 @@ class PixelateHandlers extends Component {
     let canvasTop = this.canvas.style.top;
     let svgStyle = {
       position: 'absolute',
-      left: (parseInt(canvasLeft) - 9 + 20) + 'px', // 9 is imgHandler radius, 20 is canvasElement's margin
-      top: (parseInt(canvasTop) - 9 + 20) + 'px',
-      width: this.canvasWidth + 18, // 18 is imgHandler diameter
-      height: this.canvasHeight + 18,
+      left: (parseInt(canvasLeft) - CIRCLE_RADIUS + 20) + 'px', // 20 is canvasElement's margin(todo: make this 20 a constant)
+      top: (parseInt(canvasTop) - CIRCLE_RADIUS + 20) + 'px',
+      width: this.canvasWidth + CIRCLE_RADIUS * 2,
+      height: this.canvasHeight + CIRCLE_RADIUS * 2,
     };
 
     let pathAttribute = composePath(
-        {x: 9, y: 9, width: this.canvasWidth, height: this.canvasHeight}, // PixelateHandlers is copied from CropHandlers, there are many unused code, like this line,\
+        {x: CIRCLE_RADIUS, y: CIRCLE_RADIUS, width: this.canvasWidth, height: this.canvasHeight}, // PixelateHandlers is copied from CropHandlers, there are many unused code, like this line,\
         {x: this.handlerX, y: this.handlerY, width: this.handlerWidth, height: this.handlerHeight} // I am too lazy to clean it up
     );
 
     let path = <path d={pathAttribute} fill='#000' fillOpacity={0.5} strokeWidth={1}/>;
     // todo: make the following svg a component
 
-    let xOffset = this.handlerX - 9;
-    let yOffset = this.handlerY - 9;
+    let xOffset = this.handlerX - CIRCLE_RADIUS;
+    let yOffset = this.handlerY - CIRCLE_RADIUS;
     return (
         <svg id='canvas-handler' ref={s => this.svg = s} style={svgStyle}
              onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp} onMouseMove={this.onMouseMove} onMouseLeave={this.onMouseLeave}>
           {path}
-          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-0" x={xOffset} y={yOffset} {...handlerCommonProps}/>
-          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-1" x={xOffset + this.handlerWidth} y={yOffset} {...handlerCommonProps}/>
-          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-2" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
-          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-3" x={xOffset} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
+          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-0" x={xOffset} y={yOffset} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-1" x={xOffset + this.handlerWidth} y={yOffset} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-2" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-3" x={xOffset} y={yOffset + this.handlerHeight} {...HANDLER_COMMON_PROPS}/>
 
           {/*
           rect's starting X/Y are bigger, width/height are smaller than the underlying innerRect for easy grab,
           otherwise, the grab cursor overlap the resize cursor when the mouse is over one of resize handlers.
           Set the rect's fill to 'yellow', fillOpacity = 0.4, and you'd see what I mean.
           */}
-          <rect x={xOffset + 9 + 9} y={yOffset + 9 + 9} width={this.handlerWidth - 18} height={this.handlerHeight - 18}
+          <rect x={xOffset + CIRCLE_RADIUS * 2} y={yOffset + CIRCLE_RADIUS * 2} width={this.handlerWidth - CIRCLE_RADIUS * 2} height={this.handlerHeight - CIRCLE_RADIUS * 2}
                 className='canvas-handler' id='handler-8' fillOpacity={0} cursor='grab'/>
 
-          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-4" x={xOffset + this.handlerWidth * 0.5} y={yOffset} {...handlerCommonProps}/>
-          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-5" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight * 0.5} {...handlerCommonProps}/>
-          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-6" x={xOffset + this.handlerWidth * 0.5} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
-          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-7" x={xOffset} y={yOffset + this.handlerHeight * 0.5} {...handlerCommonProps}/>
+          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-4" x={xOffset + this.handlerWidth * 0.5} y={yOffset} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-5" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight * 0.5} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-6" x={xOffset + this.handlerWidth * 0.5} y={yOffset + this.handlerHeight} {...HANDLER_COMMON_PROPS}/>
+          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-7" x={xOffset} y={yOffset + this.handlerHeight * 0.5} {...HANDLER_COMMON_PROPS}/>
         </svg>
     )}
 }

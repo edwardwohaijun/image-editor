@@ -22,7 +22,7 @@ export default class Basic extends Component {
     this.normalizeFactor = {
       hue: 2 * Math.PI / 20,
       saturation: 1/20,
-      temperature: 10,
+      temperature: 10, // todo: limit the range to [-50, 50], step: 5
     };
     // when the component get mounted the first time, nothing changed yet, which is, logically, the same as change applied.
     this.changeApplied = true;
