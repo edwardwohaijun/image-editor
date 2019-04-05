@@ -39,12 +39,9 @@ class Canvas extends Component {
           {/* canvas must have a margin of 20px(larger than imgHandler radius is enough, otherwise the upper part of imgHandler of large canvas will be "cut off" */}
 
           {/* if new handlers are to be created, don't forget to update fn resizeCanvas() in Main */}
-          {
-            this.props.cropHandlersVisible ? <CropHandlers zoomRatio={this.props.zoomRatio}/> : null
-          }
-          {
-            this.props.pixelateHandlersVisible ? <PixelateHandlers zoomRatio={this.props.zoomRatio}/> : null
-          }
+          { this.props.cropHandlersVisible ? <CropHandlers zoomRatio={this.props.zoomRatio}/> : null }
+          { this.props.pixelateHandlersVisible ? <PixelateHandlers zoomRatio={this.props.zoomRatio}/> : null }
+          {/* todo: I just copy and paste to create the <PixelateHandlers />, consider refactoring them into a <Handler /> */}
         </div>
     )}
 }

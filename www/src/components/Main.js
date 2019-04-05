@@ -19,7 +19,8 @@ class Main extends Component {
     // this.imgSrc = '/img/road.jpg';
     //this.imgSrc = '/img/stairs.jpg';
     // this.imgSrc = '/img/lake.jpg';
-    this.imgSrc = '/img/true_blood_cold_temperature.jpg'
+    // this.imgSrc = '/img/true_blood_cold_temperature.jpg';
+    this.imgSrc = '/img/endgame.png';
     // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
 
@@ -72,6 +73,8 @@ class Main extends Component {
     canvas.style.left = left + 'px';
     canvas.style.top = top + 'px';
 
+    // todo: moving handler left/top/width/height into redux, let those handlers respond on changes
+    // it's too easy to forget to add the following check after adding a new handlers
     if (this.props.cropHandlersVisible || this.props.pixelateHandlersVisible) {
       let handlers = document.getElementById('canvas-handler');
       handlers.style.left = left - 9 + 20 + 'px'; // 9 is imgHandler's radius, canvas has 20px margin

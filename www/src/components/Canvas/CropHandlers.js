@@ -240,7 +240,6 @@ class CropHandlers extends Component {
       width: this.canvasWidth + 18, // 18 is imgHandler diameter
       height: this.canvasHeight + 18,
     };
-    console.log('svg style: ', svgStyle);
 
     let pathAttribute = composePath( // when canvasHandler get mounted, its outerRect and innerRect are the same
         {x: 9, y: 9, width, height},

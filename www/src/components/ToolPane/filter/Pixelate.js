@@ -25,6 +25,16 @@ class Pixelate extends Component {
 
   componentDidMount = () => this.props.showPixelateHandlers(true);
 
+  componentDidUpdate = () => {
+    this.changeApplied = false;
+    let x = this.props.pixelatePosition.get('x');
+    let y = this.props.pixelatePosition.get('y');
+    let width = this.props.pixelatePosition.get('width');
+    let height = this.props.pixelatePosition.get('height');
+    this.wasm_img.pixelate(x, y, width, height, this.state.blockSize);
+    this.props.redraw();
+  };
+
   onChange = evt => {
     let tgt = evt.target;
     let changeManner = tgt.dataset.valueChange;
@@ -49,6 +59,7 @@ class Pixelate extends Component {
       return
     }
 
+    this.changeApplied = false;
     this.setState({blockSize});
     this.wasm_img.pixelate(750, 50, 150, 550, blockSize);
     this.props.redraw();
@@ -94,7 +105,7 @@ class Pixelate extends Component {
 
 const mapStateToProps = state => ({
   pixelateHandlersVisible: state.pixelateHandlers.get('visible'),
-  pixelateHandlersPosition: state.pixelateHandlers.get('position')
+  pixelatePosition: state.pixelateHandlers.get('position')
 });
 const mapDispatchToProps = dispatch => bindActionCreators({showPixelateHandlers}, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(Pixelate);

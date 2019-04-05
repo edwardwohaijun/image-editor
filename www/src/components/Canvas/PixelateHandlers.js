@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from "react-redux";
+import { bindActionCreators } from 'redux';
+import {setPixelateHandlersPosition} from '../../actions'
 
 const circleImg = 'data:image/svg+xml;base64,PCFET0NUWVBFIHN2ZyBQVUJMSUMgIi0vL1czQy8vRFREIFNWRyAxLjEvL0VOIiAiaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkIj48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxOHB4IiBoZWlnaHQ9IjE4cHgiIHZlcnNpb249IjEuMSI+PGNpcmNsZSBjeD0iOSIgY3k9IjkiIHI9IjUiIHN0cm9rZT0iI2ZmZiIgZmlsbD0iIzAwN2RmYyIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+';
 const handlerCommonProps = {
@@ -30,11 +32,26 @@ class PixelateHandlers extends Component {
     this.handlerY = 9; // 9 is the imgHandler's radius, this value make 4 imgHandler's center sit right on the corner of the underlying canvas
     this.handlerWidth = this.canvasWidth; // this.canvasBbox.width; // inner rect's width and height
     this.handlerHeight = this.canvasHeight; // this.canvasBbox.height; // the default value is the same as the underlying canvas
+
+    this.handlerX += (this.canvasWidth - 200) / 2; // todo: 200 是写死的, 如果img size小于200, 还需要设为imgSize, 尚未做呢.
+    this.handlerY += (this.canvasHeight - 200) / 2;
+    this.handlerWidth = 200;
+    this.handlerHeight = 200;
+
     this.handlerMovingX = 0; // when a imgHandler's being dragged, MovingX/Y reflect their real-time position
     this.handlerMovingY = 0;
   }
 
-  componentDidMount = () => { };
+  setPixelateRegion = () => { // todo: how to avoid unnecessary call
+    let ratio = this.props.zoomRatio;
+    let x = Math.round((this.handlerX - 9) / ratio);
+    let y = Math.round((this.handlerY - 9) / ratio);
+    let width = Math.round(this.handlerWidth / ratio);
+    let height = Math.round(this.handlerHeight / ratio);
+    this.props.setPixelateHandlersPosition({x, y, width, height});
+  };
+
+  componentDidMount = () => this.setPixelateRegion();
 
   componentDidUpdate = prevProps => { // todo: after rounding, the final x/y/w/h might exceed boundary
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;
@@ -45,6 +62,7 @@ class PixelateHandlers extends Component {
     this.canvasWidth = Math.round(this.canvasWidth * resizeRatio);
     this.canvasHeight = Math.round(this.canvasHeight * resizeRatio);
     this.setPosition();
+    this.setPixelateRegion()
   };
 
   // todo: 确保 handlerX, Y的最小值是0, 用 min()
@@ -97,13 +115,14 @@ class PixelateHandlers extends Component {
     });
   };
 
-  onMouseUp = evt => { // todo: check 一下, 是否有 9px 之类的offset需要考虑.
+  onMouseUp = evt => {
     if (this.state.selectedHandler) {
       if (this.state.selectedHandler === 'handler-8') {
         evt.target.style.cursor = 'grab'
       }
 
       this.setState({selectedHandler: ''});
+      this.setPixelateRegion();
     }
   };
 
@@ -200,14 +219,10 @@ class PixelateHandlers extends Component {
 
     this.handlerMovingX = x;
     this.handlerMovingY = y;
-    this.setPosition()
+    this.setPosition();
   };
 
   render() {
-
-    let width = this.handlerWidth; // this.canvasBbox.width;
-    let height = this.handlerHeight; // this.canvasBbox.height;
-
     let canvasLeft = this.canvas.style.left;
     let canvasTop = this.canvas.style.top;
     let svgStyle = {
@@ -218,32 +233,37 @@ class PixelateHandlers extends Component {
       height: this.canvasHeight + 18,
     };
 
-    let pathAttribute = composePath( // when canvasHandler get mounted, its outerRect and innerRect are the same
-        {x: 9, y: 9, width, height},
-        {x: 9, y: 9, width: this.canvasWidth, height: this.canvasHeight}
+    let pathAttribute = composePath(
+        {x: 9, y: 9, width: this.canvasWidth, height: this.canvasHeight}, // PixelateHandlers is copied from CropHandlers, there are many unused code, like this line,\
+        {x: this.handlerX, y: this.handlerY, width: this.handlerWidth, height: this.handlerHeight} // I am too lazy to clean it up
     );
 
-    let path = <path d={pathAttribute} fill='#000' fillOpacity={0.6} strokeWidth={1}/>;
+    let path = <path d={pathAttribute} fill='#000' fillOpacity={0.5} strokeWidth={1}/>;
+    // todo: make the following svg a component
+
+    let xOffset = this.handlerX - 9;
+    let yOffset = this.handlerY - 9;
     return (
         <svg id='canvas-handler' ref={s => this.svg = s} style={svgStyle}
              onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp} onMouseMove={this.onMouseMove} onMouseLeave={this.onMouseLeave}>
           {path}
-          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-0" x={0} y={0} {...handlerCommonProps}/>
-          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-1" x={width} y={0} {...handlerCommonProps}/>
-          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-2" x={width} y={height} {...handlerCommonProps}/>
-          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-3" x={0} y={height} {...handlerCommonProps}/>
+          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-0" x={xOffset} y={yOffset} {...handlerCommonProps}/>
+          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-1" x={xOffset + this.handlerWidth} y={yOffset} {...handlerCommonProps}/>
+          <image style={{cursor: 'nwse-resize'}} className='canvas-handler' id="handler-2" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
+          <image style={{cursor: 'nesw-resize'}} className='canvas-handler' id="handler-3" x={xOffset} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
 
           {/*
           rect's starting X/Y are bigger, width/height are smaller than the underlying innerRect for easy grab,
           otherwise, the grab cursor overlap the resize cursor when the mouse is over one of resize handlers.
-          set the rect's fill to 'yellow', fillOpacity = 0.4, and you'd see what I mean.
+          Set the rect's fill to 'yellow', fillOpacity = 0.4, and you'd see what I mean.
           */}
-          <rect x={9 + 9} y={9 + 9} width={width - 18} height={height - 18} className='canvas-handler' id='handler-8' fillOpacity={0} cursor='grab'/>
+          <rect x={xOffset + 9 + 9} y={yOffset + 9 + 9} width={this.handlerWidth - 18} height={this.handlerHeight - 18}
+                className='canvas-handler' id='handler-8' fillOpacity={0} cursor='grab'/>
 
-          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-4" x={width * 0.5} y={0} {...handlerCommonProps}/>
-          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-5" x={width} y={height * 0.5} {...handlerCommonProps}/>
-          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-6" x={width * 0.5} y={height} {...handlerCommonProps}/>
-          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-7" x={0} y={height * 0.5} {...handlerCommonProps}/>
+          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-4" x={xOffset + this.handlerWidth * 0.5} y={yOffset} {...handlerCommonProps}/>
+          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-5" x={xOffset + this.handlerWidth} y={yOffset + this.handlerHeight * 0.5} {...handlerCommonProps}/>
+          <image style={{cursor: 'ns-resize'}} className='canvas-handler' id="handler-6" x={xOffset + this.handlerWidth * 0.5} y={yOffset + this.handlerHeight} {...handlerCommonProps}/>
+          <image style={{cursor: 'ew-resize'}} className='canvas-handler' id="handler-7" x={xOffset} y={yOffset + this.handlerHeight * 0.5} {...handlerCommonProps}/>
         </svg>
     )}
 }
@@ -253,9 +273,8 @@ const mapStateToProps = state => ({
   imgWidth: state.imgStat.get('width'),
   imgHeight: state.imgStat.get('height'),
 });
-// const mapDispatchToProps = dispatch => bindActionCreators({setWidthHeight}, dispatch);
-export default connect(mapStateToProps, null)(PixelateHandlers);
-
+const mapDispatchToProps = dispatch => bindActionCreators({setPixelateHandlersPosition}, dispatch);
+export default connect(mapStateToProps, mapDispatchToProps)(PixelateHandlers);
 
 const composePath = (outer, inner) => {
   let outerRect = 'M' + outer.x + ',' + outer.y + ' h' + outer.width + ' v' + outer.height + ' h-' + outer.width + ' z';
