@@ -88,6 +88,7 @@ class Main extends Component {
   componentDidUpdate = () => { };
 
   loadImage = src => { // todo: use fetch(), then read as blob, rather than base64
+    console.log('load src: src: ', src);
     if (!src) {
       src = this.imgSrc
     }

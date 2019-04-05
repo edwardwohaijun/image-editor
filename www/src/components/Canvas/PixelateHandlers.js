@@ -19,6 +19,8 @@ class PixelateHandlers extends Component {
     // The outer rect's position/width/height are fixed, inner rect can be moved/resize.
     this.handlerWidth = Math.min(this.canvasWidth, DEF_HANDLER_RECT_WIDTH); // inner rect's width and height, \
     this.handlerHeight = Math.min(this.canvasHeight, DEF_HANDLER_RECT_HEIGHT); // default value is fixed(read from a constant), unless the canvas' width is less than that
+    // to fix: if you set the handlerWidth to the minimum(20px), then scale up, handlerWidth would also get scaled up, then set to 20px again, then scale down to original, \
+    // this'd cause handlerWidth less than the minimum allowed 20px, if the scaling factor is bigger enough, even causing negative value
 
     // the top-left coordinate of inner rect. This coordinate is relative to parent svg, not to browser viewport, \
     // it's also the top-left circle <image />'s center position

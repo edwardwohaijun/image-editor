@@ -108,6 +108,7 @@ class Pixelate extends Component {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
 
+          {/* todo: add another option: use Gaussian blur to fill the selected region */}
           <div style={{display: 'flex', alignItems: 'center', marginBottom: '18px'}}>
             <button className={'resize-view-btn btn-plus-minus'} data-value-change="down" onClick={this.onChange}>
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
