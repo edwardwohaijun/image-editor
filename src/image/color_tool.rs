@@ -185,14 +185,10 @@ impl Image {
             *i /= size as f64
         }
 
-        // todo: write some comments on the following code
-        let mut current_item;
-        let mut last_item = intensity_dist[255];
-        intensity_dist[255] = 1.0;
-        for idx in (1..255).rev() {
-            current_item = intensity_dist[idx];
-            intensity_dist[idx] = (intensity_dist[idx + 1] - last_item).max(0.0);
-            last_item = current_item
+        let mut running_sum = 0.0;
+        for idx in 1..256 { // in a nutshell, the value in intensity_dist is a Fibonacci sequence
+            running_sum = (intensity_dist[idx] + intensity_dist[idx - 1]).min(1.0);
+            intensity_dist[idx] = running_sum
         }
 
         // intensity vector's initial purpose is to generate intensity distribution,\
