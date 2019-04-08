@@ -105,10 +105,9 @@ impl Image {
     pub fn blur(&mut self, sigma: f64) {
         let num_pass = 3;
         let box_size = self.box_for_gaussian(sigma, num_pass);
-        log!("box size: {:?}", box_size);
 
         // todo: optimise, because I already have self.pixel, self.pixels_bk
-        let mut src = self.pixels.clone();
+        let mut src = self.pixels_bk.clone();
         let mut tgt: Vec<u8> = vec![0_u8; (self.width * self.height * 4) as usize];
         self.box_blur_h(&src, &mut tgt, box_size[0] / 2);
         self.box_blur_v(&tgt, &mut src, box_size[0] / 2);

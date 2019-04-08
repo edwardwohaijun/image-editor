@@ -51,7 +51,9 @@ class Pixelate extends Component {
     }
   };
 
-  componentDidUpdate = () => { // this only update is handler position, triggered from PixelHandlers by moving handlers
+  componentDidUpdate = () => { // the only update is handler position, triggered from PixelHandlers by moving handlers.
+    // but when pixelateHandlers get mounted, it'd call setPixelateRegion() which is a redux action, \
+    // then componentDidUpdate react to this store change by calling the following pixelate().
     let x = this.props.position.get('x');
     let y = this.props.position.get('y');
     let width = this.props.position.get('width');
