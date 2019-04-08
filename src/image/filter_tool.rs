@@ -100,7 +100,8 @@ impl Image {
     }
 
     // This is the approximation of Gaussian Blur, but faster.
-    // Most of the code are just shamelessly copied from the following pages:
+    // Some code are just shamelessly copied from the following pages:
+    // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
     pub fn blur(&mut self, sigma: f64) {
         let num_pass = 3;
@@ -120,7 +121,8 @@ impl Image {
         self.pixels = src;
     }
 
-    fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) { // can I factor _h and _v into one fn????
+    // todo: factor the following 2 fn into one
+    fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) {
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
         let img_width = self.width;
@@ -159,9 +161,9 @@ impl Image {
         let img_height = self.height;
 
         let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
-        let mut box_sum = |row, col, start: i32, end: i32| { // why I never use the 2nd 'col' argument???????? and re-declare a new one by shadowing it???????
+        let mut box_sum = |row, col, start: i32, end: i32| {
             for idx in 0..(radius * 2 + 1) {
-                let col = cmp::min(cmp::max(start + idx as i32, 0), img_width as i32 - 1); // todo: no need to check max::(), because it's always less than width
+                let col = cmp::min(cmp::max(start + idx as i32, 0), img_width as i32 - 1);
                 let idx2 = (row * img_width) as usize + col as usize;
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
@@ -169,7 +171,7 @@ impl Image {
                 running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
-            let idx = (row * img_width + col) as usize; // todo: can I reuse the start/end to calcuate the 'row'
+            let idx = (row * img_width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
@@ -182,10 +184,6 @@ impl Image {
                 box_sum(row,col, col as i32 - radius as i32, col as i32 + radius as i32)
             }
         }
-
-
-
-
 
         /* failed attempt: try to reuse the .......
         let get_box_sum = |row, tail_idx| -> (u32, u32, u32, u32){
