@@ -1,6 +1,7 @@
 extern crate wasm_bindgen;
 extern crate web_sys;
 
+use std::cmp;
 use wasm_bindgen::prelude::*;
 use super::Image;
 
@@ -21,10 +22,10 @@ impl Image {
         let img_height = self.height;
 
         // validation check
-        let mut top_x = top_x.max(0).min((img_width - 1) as i32) as u32; // todo: there are some similar code in transform/crop, update it as well
-        let mut top_y = top_y.max(0).min((img_height - 1) as i32) as u32;
-        let mut p_width = p_width.max(1).min(img_width);
-        let mut p_height = p_height.max(1).min(img_height);
+        let top_x = top_x.max(0).min((img_width - 1) as i32) as u32; // todo: there are some similar code in transform/crop, update it as well
+        let top_y = top_y.max(0).min((img_height - 1) as i32) as u32;
+        let p_width = p_width.max(1).min(img_width);
+        let p_height = p_height.max(1).min(img_height);
 
         if top_x + p_width > img_width as u32 || top_y + p_height > img_height as u32 {
             // validation check is done in JS, Rust check is to prevent panic.
@@ -80,7 +81,7 @@ impl Image {
     // when user move the pixelatedRegion, we need to restore the previous region to the original state, before applying the new changes.
     fn restore_area(&mut self) {
         let (x, y, width, height) = self.restore_rect;
-        if x == 0 && y == 0 && width == 0 && height == 0 {
+        if x == 0 && y == 0 && width == 0 && height == 0 { // this is the initial value when Image object is created for the first time.
             return
         }
 
@@ -97,5 +98,160 @@ impl Image {
             }
         }
     }
+
+    // This is the approximation of Gaussian Blur, but faster.
+    // Most of the code are just shamelessly copied from the following pages:
+    // http://blog.ivank.net/fastest-gaussian-blur.html
+    pub fn blur(&mut self, sigma: f64) {
+        let num_pass = 3;
+        let box_size = self.box_for_gaussian(sigma, num_pass);
+        log!("box size: {:?}", box_size);
+
+        // todo: optimise, because I already have self.pixel, self.pixels_bk
+        let mut src = self.pixels.clone();
+        let mut tgt: Vec<u8> = vec![0_u8; (self.width * self.height * 4) as usize];
+        self.box_blur_h(&src, &mut tgt, box_size[0] / 2);
+        self.box_blur_v(&tgt, &mut src, box_size[0] / 2);
+
+        self.box_blur_h(&src, &mut tgt, box_size[1] / 2);
+        self.box_blur_v(&tgt, &mut src, box_size[1] / 2);
+
+        self.box_blur_h(&src, &mut tgt, box_size[2] / 2);
+        self.box_blur_v(&tgt, &mut src, box_size[2] / 2); // todo: pass &self.pixels as target?????????
+        self.pixels = src;
+    }
+
+    fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) { // can I factor _h and _v into one fn????
+        let radius = if radius % 2 == 0 {radius + 1} else {radius};
+        let avg = 1.0 / (radius * 2 + 1) as f64;
+        let img_width = self.width;
+        let img_height = self.height;
+
+        let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        let mut box_sum = |row, col, start: i32, end: i32| {
+            for idx in 0..(radius * 2 + 1) {
+                let row = cmp::min(cmp::max(start + idx as i32, 0), img_height as i32 - 1) as u32;
+                let idx2 = (row * img_width) as usize + col as usize;
+                running_sum.0 += src[idx2 * 4 + 0] as u32;
+                running_sum.1 += src[idx2 * 4 + 1] as u32;
+                running_sum.2 += src[idx2 * 4 + 2] as u32;
+                running_sum.3 += src[idx2 * 4 + 3] as u32;
+            }
+
+            let idx = (row * img_width + col) as usize;
+            tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
+            running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        };
+
+        for col in 0..img_width {
+            for row in 0..img_height {
+                box_sum(row,col, row as i32 - radius as i32, row as i32 + radius as i32)
+            }
+        }
+    }
+
+    fn box_blur_h(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) {
+        let radius = if radius % 2 == 0 {radius + 1} else {radius};
+        let avg = 1.0 / (radius * 2 + 1) as f64;
+        let img_width = self.width;
+        let img_height = self.height;
+
+        let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        let mut box_sum = |row, col, start: i32, end: i32| { // why I never use the 2nd 'col' argument???????? and re-declare a new one by shadowing it???????
+            for idx in 0..(radius * 2 + 1) {
+                let col = cmp::min(cmp::max(start + idx as i32, 0), img_width as i32 - 1); // todo: no need to check max::(), because it's always less than width
+                let idx2 = (row * img_width) as usize + col as usize;
+                running_sum.0 += src[idx2 * 4 + 0] as u32;
+                running_sum.1 += src[idx2 * 4 + 1] as u32;
+                running_sum.2 += src[idx2 * 4 + 2] as u32;
+                running_sum.3 += src[idx2 * 4 + 3] as u32;
+            }
+
+            let idx = (row * img_width + col) as usize; // todo: can I reuse the start/end to calcuate the 'row'
+            tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
+            tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
+            running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        };
+
+        for row in 0..img_height {
+            for col in 0..img_width {
+                box_sum(row,col, col as i32 - radius as i32, col as i32 + radius as i32)
+            }
+        }
+
+
+
+
+
+        /* failed attempt: try to reuse the .......
+        let get_box_sum = |row, tail_idx| -> (u32, u32, u32, u32){
+            let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+            // let idx = row * img_width;
+            for idx in 0..(radius * 2 + 1) {
+                let col = cmp::max(tail_idx + idx as i32, 0);
+                let idx2 = (row * img_width) as usize + col as usize;
+                running_sum.0 += src[idx2 * 4 + 0] as u32;
+                running_sum.1 += src[idx2 * 4 + 1] as u32;
+                running_sum.2 += src[idx2 * 4 + 2] as u32;
+                running_sum.3 += src[idx2 * 4 + 3] as u32;
+            }
+            running_sum
+        };
+
+        // for this box: [-4, -3, -2, -1, 0, 1, 2, 3, 4], if radius is 3, the col is 0 in the first iteration of next for-loop
+        for row in 0..img_height {
+            let sum = get_box_sum(row, -1 * radius as i32 - 1); // radius is u32, multiplying by -1 still generate unsigned integer
+            for col in 0..img_width {
+                let idx = (row * img_width + col) as usize;
+                // tail_idx = tail_idx.max(0).min(img_width - 1);
+                let tail_idx = (col - radius - 1).max(0) as usize;
+                let head_idx = (col + radius).min(img_width - 1) as usize;
+
+                tgt[idx * 4 + 0] = ((sum.0 - src[tail_idx * 4 + 0] as u32 + src[head_idx * 4 + 0] as u32) as f64 * avg).min(255.0).round() as u8; // 貌似没必要check是否小于255
+                tgt[idx * 4 + 1] = ((sum.1 - src[tail_idx * 4 + 1] as u32 + src[head_idx * 4 + 1] as u32) as f64 * avg).min(255.0).round() as u8;
+                tgt[idx * 4 + 2] = ((sum.2 - src[tail_idx * 4 + 2] as u32 + src[head_idx * 4 + 2] as u32) as f64 * avg).min(255.0).round() as u8;
+                tgt[idx * 4 + 3] = ((sum.3 - src[tail_idx * 4 + 3] as u32 + src[head_idx * 4 + 3] as u32) as f64 * avg).min(255.0).round() as u8;
+            }
+        }
+        */
+
+
+    }
+
+    // this is just the help fn, which has nothing to do with self, can we move it into an util module?
+    // sigma is the std deviation(how much blurry the img will be), for this fn, it means the radius of blur.
+    // n is the number of box, or how many passes we need to run to approximate Gaussian blur.
+    // In theory, when this number approaches Infinity, we get pure Gaussian blur.
+    // In practice, 3 is a good balance between computation and blurring effect.
+    fn box_for_gaussian(&self, sigma: f64, n: u32) -> Vec<u32> {
+        // Ideal averaging filter width
+        let w_ideal = ((12.0 * sigma * sigma / n as f64) + 1.0).sqrt();
+        let mut wl: f64 = w_ideal.floor();
+
+        if wl as u32 % 2 == 0 {
+            wl -= 1.0;
+        };
+        let wu = wl + 2.0;
+
+        let m_ideal = (12.0 * sigma * sigma - n as f64 * wl * wl - 4.0 * n as f64 * wl - 3.0 * n as f64) /
+            (-4.0 * wl - 4.0);
+        let m = m_ideal.round();
+
+        let mut sizes:Vec<u32> = Vec::with_capacity(n as usize);
+        for i in 0..n {
+            if i < m as u32 {
+                sizes.push(wl as u32);
+            } else {
+                sizes.push(wu as u32);
+            }
+        }
+        sizes
+    }
+
 
 }

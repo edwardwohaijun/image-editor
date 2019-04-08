@@ -15,7 +15,7 @@ impl Image {
         let mut top_x = top_x.max(0).min(self.width_bk as i32);
         let mut top_y = top_y.max(0).min(self.height_bk as i32);
         let mut width = width.min(self.width_bk);
-        let mut height = height.min(self.height_bk);
+        let height = height.min(self.height_bk);
 
         if top_x as u32 + width > self.width_bk {
             top_x = (self.width_bk - width) as i32
