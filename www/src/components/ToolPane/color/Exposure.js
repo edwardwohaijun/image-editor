@@ -90,6 +90,7 @@ export default class Exposure extends Component {
     this.props.onSelectTool(''); // to unmount myself.
   };
 
+  // todo: add a curve, giving users a fine-grained control on contrast
   render() {
     let autoAdjustContrast = this.state.contrastAdjustMode === 'auto';
     return (

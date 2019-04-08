@@ -15,12 +15,13 @@ class Main extends Component {
       selectedTool: null,
     };
     // this.imgSrc = '/img/wonder-woman.jpg';
-    // this.imgSrc = '/img/len_full.jpg';
+    this.imgSrc = '/img/len_full.jpg';
     // this.imgSrc = '/img/road.jpg';
     //this.imgSrc = '/img/stairs.jpg';
     // this.imgSrc = '/img/lake.jpg';
     // this.imgSrc = '/img/true_blood_cold_temperature.jpg';
-    this.imgSrc = '/img/endgame.png';
+    // this.imgSrc = '/img/endgame.png';
+    // this.imgSrc = '/img/cap.png';
     // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
 
@@ -88,7 +89,6 @@ class Main extends Component {
   componentDidUpdate = () => { };
 
   loadImage = src => { // todo: use fetch(), then read as blob, rather than base64
-    console.log('load src: src: ', src);
     if (!src) {
       src = this.imgSrc
     }

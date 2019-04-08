@@ -1,7 +1,7 @@
 import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
 import Cartoonify from './Cartoonify';
-import GaussianBlur from './GaussianBlur';
+import Blur from './Blur';
 import Miniaturize from './Miniaturize';
 import MotionBlur from './MotionBlur';
 import Pixelate from './Pixelate';
@@ -37,7 +37,7 @@ class FilterTool extends Component {
             <Cartoonify onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
           </ToolHeader>
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-gaussianblur' selectedTool={this.state.selectedTool} label='GAUSSIAN BLUR'>
-            <GaussianBlur onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
+            <Blur onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
             <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>

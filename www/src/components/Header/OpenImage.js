@@ -82,6 +82,16 @@ export default class OpenImage extends Component {
     )}
 }
 
+// https://googlechrome.github.io/samples/image-capture/grab-frame-take-photo.html
+// https://stackoverflow.com/questions/33975431/how-can-i-capture-an-image-via-the-users-webcam-using-getusermedia
+// https://www.jonathan-petitcolas.com/2016/08/24/taking-picture-from-webcam-using-canvas.html
+// https://blog.prototypr.io/make-a-camera-web-app-tutorial-part-1-ec284af8dddf
+// https://codepen.io/ekrof/pen/yOrPwv
+// https://github.com/mdn/samples-server/blob/master/s/webrtc-capturestill/capture.js
+// https://gist.github.com/anantn/1852070
+// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Taking_still_photos
+// https://www.html5rocks.com/en/tutorials/getusermedia/intro/
+// https://developers.google.com/web/fundamentals/media/capturing-images/
 // https://tutorialzine.com/2016/07/take-a-selfie-with-js
 // create a modal dialog like this one, with 3 buttons: delete, take-selfie, I need another canvas to save the img for users to take action
 // if you are satisfied, I'd copy the img to editing canvs, if not, you can take another one.

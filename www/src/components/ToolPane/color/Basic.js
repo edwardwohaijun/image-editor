@@ -104,6 +104,7 @@ export default class Basic extends Component {
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Hue</div>
+              {/* use colorful slider, like https://www.outdoorphotographer.com/tips-techniques/photo-editing-tips/hue-and-saturation/ */}
               {/* todo: it'd be better to show: +/- 30 degree */}
               <div style={{paddingRight: '8px'}}>{this.state.hue}</div>
             </div>
