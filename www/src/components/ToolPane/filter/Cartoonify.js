@@ -8,12 +8,7 @@ export default class Cartoonify extends Component {
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
     };
-
-    this.sliderRange = {
-      contrast: [1, 20, 1], // [min, max, step]
-      brightness: [10, 10, 1],
-    };
-    this.changeApplied = true;
+    this.changeApplied = false;
   }
 
   componentWillUnmount = () => {
@@ -21,6 +16,11 @@ export default class Cartoonify extends Component {
       this.wasm_img.discard_change();
       this.props.redraw();
     }
+  };
+
+  onCartoonify = () => {
+    this.wasm_img.cartoonify(2);
+    this.props.redraw()
   };
 
   onApply = () => {
@@ -32,7 +32,7 @@ export default class Cartoonify extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-          Cartoonify
+          <button onClick={this.onCartoonify}>Cartoonify</button>
           <ApplyButton onApply={this.onApply}/>
         </div>
     )}

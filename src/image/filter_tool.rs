@@ -2,6 +2,7 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 
 use std::cmp;
+use std::iter::Iterator;
 use wasm_bindgen::prelude::*;
 use super::Image;
 
@@ -103,7 +104,7 @@ impl Image {
     // Some code are just shamelessly copied from the following pages:
     // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
-    pub fn blur(&mut self, sigma: f64) {
+    pub fn gaussian_blur(&mut self, sigma: f64) {
         let num_pass = 3;
         let box_size = self.box_for_gaussian(sigma, num_pass);
 
@@ -117,7 +118,7 @@ impl Image {
         self.box_blur_v(&tgt, &mut src, box_size[1] / 2);
 
         self.box_blur_h(&src, &mut tgt, box_size[2] / 2);
-        self.box_blur_v(&tgt, &mut src, box_size[2] / 2); // todo: pass &self.pixels as target?????????
+        self.box_blur_v(&tgt, &mut src, box_size[2] / 2);
         self.pixels = src;
     }
 
@@ -136,14 +137,14 @@ impl Image {
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
-                running_sum.3 += src[idx2 * 4 + 3] as u32;
+                // running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
             let idx = (row * img_width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
+            //tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
@@ -168,14 +169,14 @@ impl Image {
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
-                running_sum.3 += src[idx2 * 4 + 3] as u32;
+                //running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
             let idx = (row * img_width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
+            //tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
@@ -248,6 +249,150 @@ impl Image {
             }
         }
         sizes
+    }
+
+
+    // Median filtering is implemented using:
+    // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
+    // the traditional impl is too expensive, especially for big radius(>= 9)
+    pub fn cartoonify(&mut self, radius: u32) { // radius: [1, 9, 1]
+        self.median_filter(radius);
+        self.edge_detect();
+    }
+
+    fn median_filter(&mut self, radius: u32) {
+        let radius = if radius % 2 == 0 {radius + 1} else {radius};
+        if radius > self.height / 2 || radius > self.width / 2 { // todo: add this check for all other filter operators
+            log!("radius must at least larger than half of image width and height");
+            return
+        }
+        // let radius = if radius % 2 == 0 {radius + 1} else {radius}; // as long as the width/height is "2 * radius + 1", radius doesn't have to be odd
+        let img_width = self.width;
+        let img_height = self.height;
+
+        let mut histogram = vec![vec![0_u32; 256]; 3];
+        let kernel_width = 2 * radius + 1;
+        // initialize histogram, as if kernel center is sitting right on the top-left corner of image
+        for row in (-1 * radius as i32)..(radius as i32 + 1) {
+            for col in (-1 * radius as i32)..(radius as i32 + 1) {
+                let idx = (row.max(0) * kernel_width as i32 + col.max(0)) as usize;
+                let r = self.pixels_bk[idx * 4 + 0] as usize;
+                let g = self.pixels_bk[idx * 4 + 1] as usize;
+                let b = self.pixels_bk[idx * 4 + 2] as usize;
+                histogram[0][r] += 1;
+                histogram[1][g] += 1;
+                histogram[2][b] += 1;
+            }
+        }
+        log!("initialized histogram: {:?}\nkernel width, {:?}, radius: {:?}",histogram, kernel_width, radius);
+
+        let mut update_hist_h = |row:u32, col:u32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
+            // let idx = row * img_width + col;
+            for i in 0..kernel_width {
+                let row1 = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as u32;
+                let col1 = (col + radius + 1).min(img_width - 1); // +1, we need to add the right-most column after current kernel
+                let mut idx = (row1 * img_width + col1) as usize;
+                //log!("row1: {:?}, col1: {:?}, idx: {:?}, originalRow-Col: {:?}/{:?}", row1, col1, idx, row, col);
+                let r = pixels[idx * 4 + 0] as usize;
+                let g = pixels[idx * 4 + 1] as usize;
+                let b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] += 1;
+                histogram[1][g] += 1;
+                histogram[2][b] += 1;
+
+                let row2 = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as u32; // todo: row1 and row2 are the same, reuse
+                let col2 = (col as i32 - radius as i32).max(0) as u32;
+                idx = (row2 * img_width + col2) as usize;
+                let r = pixels[idx * 4 + 0] as usize;
+                let g = pixels[idx * 4 + 1] as usize;
+                let b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1}; // if the histogram initialization is correct, there is no need to check, just subtract 1
+                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1}; // todo: try to remove this if check, just use: -= 1;
+                histogram[2][b] = if histogram[2][b] == 0 {0} else {histogram[2][b] - 1};
+            }
+        };
+
+        // todo: 直接把col, row pass as i32
+        let mut update_hist_v = |row:u32, col:u32, v_dir: i32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
+            let row1 = (row as i32 + radius as i32 * v_dir + 1 * v_dir).max(0).min(((img_height - 1) as i32)) as u32; // "1 * v_dir", we need to add the row above the top row, or below the bottom row
+            let row2 = (row as i32 - radius as i32 * v_dir).max(0).min((img_height - 1) as i32) as u32; // row1 is for add, row2 is for remove
+
+            for i in 0..kernel_width {
+                let col1 = (col as i32 - radius as i32 + i as i32).max(0).min(img_width as i32 - 1) as u32;
+                let mut idx = (row1 as u32 * img_width + col1) as usize;
+
+                let r = pixels[idx * 4 + 0] as usize;
+                let g = pixels[idx * 4 + 1] as usize;
+                let b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] += 1;
+                histogram[1][g] += 1;
+                histogram[2][b] += 1;
+
+                let col2 = (col as i32 - radius as i32 + i as i32).max(0).min(img_width as i32 - 1) as u32; // todo: 2 col variables are the same, use one instead.
+                idx = (row2 as u32 * img_width + col2) as usize;
+                let r = pixels[idx * 4 + 0] as usize;
+                let g = pixels[idx * 4 + 1] as usize;
+                let b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1}; // if the histogram initialization is correct, there is no need to check, just subtract 1
+                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1}; // todo: try to remove this if check, just use: -= 1;
+                histogram[2][b] = if histogram[2][b] == 0 {0} else {histogram[2][b] - 1};
+            }
+        };
+
+        let mut v_dir = 1; // 1: top down, -1: bottom up
+        let mut turned = true;
+        for col in 0..img_width {
+            let (mut top_down, mut bottom_up) = (0..img_height, (0..img_height).rev());
+            let row_range = if v_dir == 1 { &mut top_down } else { &mut bottom_up as &mut Iterator<Item = _> };
+            for row in row_range {
+                // set_median(row, col, &histogram);
+
+                let idx = (row * img_width + col) as usize;
+                let limit = kernel_width * kernel_width / 2;
+                let mut median= 0;
+                let moved = true;
+                for (color_channel, hist) in histogram.iter().enumerate() {
+                    let mut running_sum = 0;
+                    let limit = histogram[color_channel].iter().sum::<u32>() / 2;
+                    for i in 0..256 {
+                        running_sum += hist[i];
+                        if running_sum > limit {
+                            median = i;
+                            break
+                        }
+                    }
+                    // log!("gotcha, median: {:?}, original value: {:?}", median, self.pixels[idx * 4 + color_channel]);
+                    // hist[idx] = median as u8;
+                    // log!("pixel old/new value: {:?}/{:?}", self.pixels[idx * 4 + color_channel], median);
+                    self.pixels[idx * 4 + color_channel] = median as u8;
+                    // todo: sum of histogram is supposed to be a constant: kernel_width * kernel_width, but it's not, some lurking bug.
+                    // I have to calculate the sum dynamically, then calculate the median.
+                    // log!("histogram[0]: {:?}, and its sum {:?}", histogram[0], histogram[0].iter().sum::<u32>())
+                }
+
+                // log!("row/col: {:?}/{:?}", row, col)
+
+                if row % (img_height - 1) != 0 { // bring the top(or bottom)-most row into kernel, and remove the other side
+                    // log!("vertical move: {:?}", if v_dir == 1 {"top-down"} else {"bottom-up"});
+                    update_hist_v(row, col, v_dir, &mut histogram, &self.pixels_bk)
+                } else {
+                    if turned {
+                        // log!("vertical move: {:?}", if v_dir == 1 {"top-down"} else {"bottom-up"});
+                        update_hist_v(row, col, v_dir, &mut histogram, &self.pixels_bk);
+                        turned = false;
+                    } else { // kernel center is at top(or bottom) of the img, bring into kernel the right most column, and remove the left most column
+                        // log!("horizontal move");
+                        update_hist_h(row, col, &mut histogram, &self.pixels_bk)   ;
+                        turned = true;
+                    }
+                }
+            }
+            v_dir = -1 * v_dir;
+        }
+    }
+
+    fn edge_detect(&mut self) {
+
     }
 
 

@@ -9,20 +9,21 @@ export default class Blur extends Component {
     this.state = {
       radius: 5, // [1, 11, 2], [min, max, step]
     };
-    this.changeApplied = true;
+    this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
   }
 
   componentDidMount = () => this.blur();
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {
+      console.log('discarding gaussian blur....');
       this.wasm_img.discard_change();
       this.props.redraw();
     }
   };
 
-  blur = () => {
-    this.wasm_img.blur(this.state.radius);
+  blur = () => { // in th future, more blur will be added, like motion blur
+    this.wasm_img.gaussian_blur(this.state.radius);
     this.props.redraw();
   };
 
@@ -65,8 +66,6 @@ export default class Blur extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-
-
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Gaussian Blur</div>
@@ -89,8 +88,6 @@ export default class Blur extends Component {
               </button>
             </div>
           </div>
-
-          <button onClick={this.onBlur}>test</button>
           <ApplyButton onApply={this.onApply}/>
         </div>
     )}

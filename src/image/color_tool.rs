@@ -203,6 +203,8 @@ impl Image {
         self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0)
     }
 
+    // HSI is not used as frequently as RGB, thus when not used, JS will call this fn to clear the HSI data,\
+    // is this really necessary?
     pub fn clear_hsi(&mut self) {
         self.hsi = vec![vec![], vec![], vec![]];
     }
