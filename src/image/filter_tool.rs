@@ -266,12 +266,11 @@ impl Image {
             log!("radius must at least larger than half of image width and height");
             return
         }
-        // let radius = if radius % 2 == 0 {radius + 1} else {radius}; // as long as the width/height is "2 * radius + 1", radius doesn't have to be odd
+
+        let kernel_width = 2 * radius + 1;
         let img_width = self.width;
         let img_height = self.height;
-
         let mut histogram = vec![vec![0_u32; 256]; 3];
-        let kernel_width = 2 * radius + 1;
         // initialize histogram, as if kernel center is sitting right on the top-left corner of image
         for row in (-1 * radius as i32)..(radius as i32 + 1) {
             for col in (-1 * radius as i32)..(radius as i32 + 1) {
@@ -284,75 +283,84 @@ impl Image {
                 histogram[2][b] += 1;
             }
         }
-        log!("initialized histogram: {:?}\nkernel width, {:?}, radius: {:?}",histogram, kernel_width, radius);
 
-        let mut update_hist_h = |row:u32, col:u32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
-            // let idx = row * img_width + col;
+        // row, col, radius are supposed to be u32, but used as i32, because, \
+        // if 'row < radius', 'row - radius' will get wrapped around, and give you a super big u32, rather than a negative value. \
+        // for general use purpose, positive part of i32 is bigger enough for image width/height
+        let mut update_hist_h = |row: i32, col: i32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
+            let radius = radius as i32;
+            let (mut r, mut g, mut b);
+            let mut idx;
             for i in 0..kernel_width {
-                let row1 = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as u32;
-                let col1 = (col + radius + 1).min(img_width - 1); // +1, we need to add the right-most column after current kernel
-                let mut idx = (row1 * img_width + col1) as usize;
-                //log!("row1: {:?}, col1: {:?}, idx: {:?}, originalRow-Col: {:?}/{:?}", row1, col1, idx, row, col);
-                let r = pixels[idx * 4 + 0] as usize;
-                let g = pixels[idx * 4 + 1] as usize;
-                let b = pixels[idx * 4 + 2] as usize;
+                let row_to_add = (row - radius + i as i32).max(0).min(img_height as i32 - 1) as u32;
+                let col_to_add = (col + radius + 1).min(img_width as i32 - 1) as u32; // (col + radius +1): we need to add the right-most column after current kernel
+                idx = (row_to_add * img_width + col_to_add) as usize;
+                r = pixels[idx * 4 + 0] as usize;
+                g = pixels[idx * 4 + 1] as usize;
+                b = pixels[idx * 4 + 2] as usize;
                 histogram[0][r] += 1;
                 histogram[1][g] += 1;
                 histogram[2][b] += 1;
 
-                let row2 = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as u32; // todo: row1 and row2 are the same, reuse
-                let col2 = (col as i32 - radius as i32).max(0) as u32;
-                idx = (row2 * img_width + col2) as usize;
-                let r = pixels[idx * 4 + 0] as usize;
-                let g = pixels[idx * 4 + 1] as usize;
-                let b = pixels[idx * 4 + 2] as usize;
-                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1}; // if the histogram initialization is correct, there is no need to check, just subtract 1
-                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1}; // todo: try to remove this if check, just use: -= 1;
+                // let row_to_remove = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as u32;
+                // row_to_remove is the same as row_to_add, reuse it.
+                let col_to_remove = (col - radius).max(0) as u32;
+                idx = (row_to_add * img_width + col_to_remove) as usize;
+                r = pixels[idx * 4 + 0] as usize;
+                g = pixels[idx * 4 + 1] as usize;
+                b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1};
+                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1};
                 histogram[2][b] = if histogram[2][b] == 0 {0} else {histogram[2][b] - 1};
             }
         };
 
-        // todo: 直接把col, row pass as i32
-        let mut update_hist_v = |row:u32, col:u32, v_dir: i32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
-            let row1 = (row as i32 + radius as i32 * v_dir + 1 * v_dir).max(0).min(((img_height - 1) as i32)) as u32; // "1 * v_dir", we need to add the row above the top row, or below the bottom row
-            let row2 = (row as i32 - radius as i32 * v_dir).max(0).min((img_height - 1) as i32) as u32; // row1 is for add, row2 is for remove
-
+        let mut update_hist_v = |row: i32, col: i32, v_dir: i32, histogram: &mut Vec<Vec<u32>>, pixels: &[u8]| {
+            let radius = radius as i32;
+            let row_to_add = (row + radius * v_dir + 1 * v_dir).max(0).min(((img_height - 1) as i32)) as u32; // "1 * v_dir", we need to add the row above the top row, or below the bottom row
+            let row_to_remove = (row - radius * v_dir).max(0).min((img_height - 1) as i32) as u32;
+            let (mut r, mut g, mut b);
+            let mut idx;
             for i in 0..kernel_width {
-                let col1 = (col as i32 - radius as i32 + i as i32).max(0).min(img_width as i32 - 1) as u32;
-                let mut idx = (row1 as u32 * img_width + col1) as usize;
+                let col_to_add = (col - radius + i as i32).max(0).min(img_width as i32 - 1) as u32;
+                idx = (row_to_add * img_width + col_to_add) as usize;
 
-                let r = pixels[idx * 4 + 0] as usize;
-                let g = pixels[idx * 4 + 1] as usize;
-                let b = pixels[idx * 4 + 2] as usize;
+                r = pixels[idx * 4 + 0] as usize;
+                g = pixels[idx * 4 + 1] as usize;
+                b = pixels[idx * 4 + 2] as usize;
                 histogram[0][r] += 1;
                 histogram[1][g] += 1;
                 histogram[2][b] += 1;
 
-                let col2 = (col as i32 - radius as i32 + i as i32).max(0).min(img_width as i32 - 1) as u32; // todo: 2 col variables are the same, use one instead.
-                idx = (row2 as u32 * img_width + col2) as usize;
-                let r = pixels[idx * 4 + 0] as usize;
-                let g = pixels[idx * 4 + 1] as usize;
-                let b = pixels[idx * 4 + 2] as usize;
-                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1}; // if the histogram initialization is correct, there is no need to check, just subtract 1
-                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1}; // todo: try to remove this if check, just use: -= 1;
+                // let col_to_remove = (col as i32 - radius as i32 + i as i32).max(0).min(img_width as i32 - 1) as u32;
+                // col_to_remove is the same as col_to_add, reuse it
+                idx = (row_to_remove * img_width + col_to_add) as usize;
+                r = pixels[idx * 4 + 0] as usize;
+                g = pixels[idx * 4 + 1] as usize;
+                b = pixels[idx * 4 + 2] as usize;
+                histogram[0][r] = if histogram[0][r] == 0 {0} else {histogram[0][r] - 1};
+                histogram[1][g] = if histogram[1][g] == 0 {0} else {histogram[1][g] - 1};
                 histogram[2][b] = if histogram[2][b] == 0 {0} else {histogram[2][b] - 1};
             }
         };
 
         let mut v_dir = 1; // 1: top down, -1: bottom up
         let mut turned = true;
+        // when kernel center is sitting on bottom(or top) edge of image, we need to turn right, then go up(or down).
+        // So we need 'turned' bool to distinguish when to turn right, when to go up/down, \
+        // then, call following "update_hist_h" or "update_hist_v".
         for col in 0..img_width {
             let (mut top_down, mut bottom_up) = (0..img_height, (0..img_height).rev());
             let row_range = if v_dir == 1 { &mut top_down } else { &mut bottom_up as &mut Iterator<Item = _> };
             for row in row_range {
-                // set_median(row, col, &histogram);
-
                 let idx = (row * img_width + col) as usize;
-                let limit = kernel_width * kernel_width / 2;
                 let mut median= 0;
-                let moved = true;
                 for (color_channel, hist) in histogram.iter().enumerate() {
                     let mut running_sum = 0;
+                    // tofix: sum of histogram is supposed to be a constant: kernel_width * kernel_width, but it's not in my code, what went wrong?
+                    // I have to calculate the sum dynamically, then find the median.
+                    // let limit = kernel_width * kernel_width / 2;
+                    // after fix, histogram[0][r/g/b] -= 1 (in the above 2 update_hist() fn) could be used, rather than cumbersome less-than-zero check.
                     let limit = histogram[color_channel].iter().sum::<u32>() / 2;
                     for i in 0..256 {
                         running_sum += hist[i];
@@ -361,28 +369,17 @@ impl Image {
                             break
                         }
                     }
-                    // log!("gotcha, median: {:?}, original value: {:?}", median, self.pixels[idx * 4 + color_channel]);
-                    // hist[idx] = median as u8;
-                    // log!("pixel old/new value: {:?}/{:?}", self.pixels[idx * 4 + color_channel], median);
                     self.pixels[idx * 4 + color_channel] = median as u8;
-                    // todo: sum of histogram is supposed to be a constant: kernel_width * kernel_width, but it's not, some lurking bug.
-                    // I have to calculate the sum dynamically, then calculate the median.
-                    // log!("histogram[0]: {:?}, and its sum {:?}", histogram[0], histogram[0].iter().sum::<u32>())
                 }
 
-                // log!("row/col: {:?}/{:?}", row, col)
-
-                if row % (img_height - 1) != 0 { // bring the top(or bottom)-most row into kernel, and remove the other side
-                    // log!("vertical move: {:?}", if v_dir == 1 {"top-down"} else {"bottom-up"});
-                    update_hist_v(row, col, v_dir, &mut histogram, &self.pixels_bk)
+                if row % (img_height - 1) != 0 { // bring the top(or bottom)-most row into kernel, and remove the row on the other side
+                    update_hist_v(row as i32, col as i32, v_dir, &mut histogram, &self.pixels_bk)
                 } else {
                     if turned {
-                        // log!("vertical move: {:?}", if v_dir == 1 {"top-down"} else {"bottom-up"});
-                        update_hist_v(row, col, v_dir, &mut histogram, &self.pixels_bk);
+                        update_hist_v(row as i32, col as i32, v_dir, &mut histogram, &self.pixels_bk);
                         turned = false;
                     } else { // kernel center is at top(or bottom) of the img, bring into kernel the right most column, and remove the left most column
-                        // log!("horizontal move");
-                        update_hist_h(row, col, &mut histogram, &self.pixels_bk)   ;
+                        update_hist_h(row as i32, col as i32, &mut histogram, &self.pixels_bk)   ;
                         turned = true;
                     }
                 }
