@@ -18,9 +18,14 @@ export default class OpenImage extends Component {
   componentDidMount = () => {
     document.addEventListener('click', evt => {
       if (!evt.target.closest('.img-file-handler-btn-wrapper') && this.state.dropdownVisible) {
+        this.hideDropdown();
+      }
+
+      if (evt.target.classList.contains('test-image')) {
+        this.props.loadImage(evt.target.id);
         this.hideDropdown()
       }
-    })
+    });
   };
 
   componentDidUpdate = () => {};
@@ -65,16 +70,20 @@ export default class OpenImage extends Component {
                       <input type='file' accept='image/jpeg, image/png' onChange={this.onFileChange} onClick={this.onFileClick} style={{display: 'none'}}/>
                     </label>
                   </li>
-                  <li onClick={this.toggleCameraModal}>Camera</li>
+                  <li className='clickable' onClick={this.toggleCameraModal}>Camera</li>
                   <li>
-                    {/* invoke  evt handler for the following input: pressing ENTER is the same as  */}
+                    {/* invoke evt handler for the following input: pressing ENTER is the same as  */}
                     <input id='img-url' placeholder='Remote URL' onKeyUp={this.onKeyEnter}/>
                     <button className='primary-btn apply-btn' onClick={this.onGoToURL}
                             style={{color: '#ededed', marginLeft: '12px', height: '24px', width: '48px', fontSize: '15px'}}>Go</button>
                   </li>
-                  <li id='wonder-woman.jpg'>This site: /img/wonder-woman</li>
-                  <li id='Avengers1.jpg'>This site: /img/Avengers</li>
-                  <li id='Avengers2.jpg'>This site: /img/Whatever</li>
+                  <li className='test-image clickable' id='/img/JusticeLeague/wonder-woman.jpg'>DC/wonder-woman</li>
+                  <li className='test-image clickable' id='/img/Avengers/endgame.png'>Avengers/endgame</li>
+                  <li className='test-image clickable' id='/img/EddieRedmayne.jpg'>Eddie Redmayne (bilateral filtering)</li>
+                  <li className='test-image clickable' id='/img/TrueBlood.jpg'>True Blood (temperature adjust)</li>
+                  <li className='test-image clickable' id='/img/lowContrast/kitty.jpg'>Kitty (Low contrast)</li>
+                  <li className='test-image clickable' id='/img/lowContrast/forest.jpg'>Forest (low contrast - too dark)</li>
+
                 </ul>
           }
           {this.state.openCamera ? <Selfie toggleCameraModal={this.toggleCameraModal}/> : null}

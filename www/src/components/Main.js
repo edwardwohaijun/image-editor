@@ -22,6 +22,7 @@ class Main extends Component {
     // this.imgSrc = '/img/true_blood_cold_temperature.jpg';
     // this.imgSrc = '/img/endgame.png';
     this.imgSrc = '/img/cap.png';
+    // this.imgSrc = '/img/EddieRedmayne.jpg';
 
     // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
