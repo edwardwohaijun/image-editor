@@ -255,9 +255,12 @@ impl Image {
     // Median filtering is implemented using:
     // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
     // the traditional impl is too expensive, especially for big radius(>= 9)
-    pub fn cartoonify(&mut self, radius: u32) { // radius: [1, 9, 1]
-        self.median_filter(radius);
-        self.edge_detect();
+    pub fn cartoonify(&mut self, radius: u32, sigma_r: f64) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
+        self.bilateral_filter(radius, sigma_r);
+        // self.median_filter(radius);
+        // self.edge_detect();
+        // enhance edge
+        //
     }
 
     fn median_filter(&mut self, radius: u32) {
@@ -389,8 +392,92 @@ impl Image {
     }
 
     fn edge_detect(&mut self) {
+        let w = self.width;
+        let h = self.height;
+        let img_size = w * h;
+
+        let gray_pixels = (0..img_size).into_iter().map(|idx|
+            (self.pixels[idx as usize * 4 + 0] as f64 * 0.2989
+                + self.pixels[idx as usize * 4 + 1] as f64 * 0.5870
+                + self.pixels[idx as usize * 4 + 2] as f64 * 0.1140).round() as u8
+        ).collect::<Vec<_>>(); // 255.0 * 0.2989 + 255.0 * 0.5870 + 255.0 * 0.1140 = 254.9744999, so there is no need to do .max(255.0) clamp
+
+
+
 
     }
 
+    fn bilateral_filter(&mut self, radius: u32, sigma_r: f64) {
+        let sigma_d = radius as f64 / 2.0;
+        // let sigma = 0.84089642; // just a test
+        // let sigma_d = 3.0; // sigma for domain filter
+        let gaussian = |x: i32, y: i32| {
+            // https://en.wikipedia.org/wiki/Gaussian_blur
+            let a = -0.5 * ((x * x) as f64  + (y * y) as f64) / (sigma_d * sigma_d);
+            1.0_f64.exp().powf(a)
+        };
+
+        let mut kernel_value = 0.0;
+        let kernel_size = 2 * radius as usize + 1;
+        let mut kernel = Vec::with_capacity(kernel_size * kernel_size);
+        for row in 0..kernel_size{
+            for col in 0..kernel_size {
+                kernel_value = gaussian(row as i32 - radius as i32, col as i32 - radius as i32);
+                kernel.push(kernel_value);
+            }
+        }
+        // log!("kernel: {:?}", kernel);
+
+        let kernel_sum = kernel.iter().sum::<f64>();
+        // for k in kernel.iter_mut() { *k /= kernel_sum };
+
+        //let sigma_r = 20.0; // sigma for range filter
+        let range_kernel = |x: u32| {
+            let a = -0.5 * x as f64 * x as f64 / (sigma_r * sigma_r);
+            1.0_f64.exp().powf(a)
+        };
+
+        let img_width = self.width;
+        let img_height = self.height;
+        for row in 0..img_height {
+            for col in 0..img_width {
+                // let mut sum = (0_f64, 0_f64, 0_f64);
+                let mut weight = (0.0, 0.0, 0.0);
+                let idx = (row * img_width + col) as usize;
+                let cur_pixel = (self.pixels_bk[idx * 4 + 0], self.pixels_bk[idx * 4 + 1], self.pixels_bk[idx * 4 + 2]);
+                let mut new_value = (0.0, 0.0, 0.0);
+
+                for i in 0..kernel_size {
+                    for j in 0..kernel_size {
+                        let r = (row as i32 - radius as i32 + i as i32).max(0).min(img_height as i32 - 1) as usize;
+                        let c = (col as i32 - radius as i32 + j as i32).max(0).min(img_width as i32 - 1) as usize;
+                        let idx = r * img_width as usize + c;
+
+                        let red = self.pixels_bk[idx * 4 + 0];
+                        let green = self.pixels_bk[idx * 4 + 1];
+                        let blue = self.pixels_bk[idx * 4 + 2];
+
+                        let weight_domain = kernel[i * kernel_size + j];
+                        // in theory, it's better to use LAB color space, then calculate: sqrt(L*L + a*a + b*b)
+                        let range_diff = (red as i32 - cur_pixel.0 as i32).abs();
+                        let weight_range = range_kernel(range_diff as u32); // 是否需要考虑 == 0; == 255 的edge case.
+                        let composite_weight = weight_domain * weight_range;
+
+                        new_value.0 += red as f64 * composite_weight;
+                        new_value.1 += green as f64 * composite_weight;
+                        new_value.2 += blue as f64 * composite_weight;
+
+                        weight.0 += composite_weight;
+                        weight.1 += composite_weight;
+                        weight.2 += composite_weight;
+                    }
+                }
+                self.pixels[idx * 4 + 0] = (new_value.0 / weight.0 as f64) as u8;
+                self.pixels[idx * 4 + 1] = (new_value.1 / weight.1 as f64) as u8;
+                self.pixels[idx * 4 + 2] = (new_value.2 / weight.2 as f64) as u8;
+            }
+        }
+
+    }
 
 }

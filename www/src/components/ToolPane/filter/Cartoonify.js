@@ -19,7 +19,7 @@ export default class Cartoonify extends Component {
   };
 
   onCartoonify = () => {
-    this.wasm_img.cartoonify(2);
+    this.wasm_img.cartoonify(7, 30); // Gaussian sigma(std dev), range sigma
     this.props.redraw()
   };
 
