@@ -251,63 +251,20 @@ impl Image {
         sizes
     }
 
-
-    // Median filtering is implemented using:
-    // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
-    // the traditional impl is too expensive, especially for big radius(>= 9)
-    // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the step, \
-    // how about downsample the image to 1/4, do the bilateral filter, and other steps, then at the last step, upsample to original size,\
+    // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the whole procedure, \
+    // how about downsampling the image to 1/4, doing BF, and other steps, then at the last step, upsampling to original size,\
     // cartoonifying will definitely quantize color, lose many details, ....
-    pub fn cartoonify(&mut self, radius: u32, sigma_r: f64) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
-        let img_size = (self.width * self.height) as usize;
-
-        let mut src = self.pixels_bk.clone();
-        let mut tgt = vec![255_u8; img_size * 4];
-
-        // write a loop to make iterative call
-        self.rgb_to_lab(&src);
-        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
-
-        self.rgb_to_lab(&tgt);
-        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
-
-        self.rgb_to_lab(&src);
-        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
-
-        self.rgb_to_lab(&tgt);
-        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
-
-        self.rgb_to_lab(&src);
-        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
-
-        self.rgb_to_lab(&tgt);
-        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
-
-
-        /*
-        self.rgb_to_lab(&src);
-        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
-
-        self.rgb_to_lab(&tgt);
-        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
-*/
-
-        /*
-        self.rgb_to_lab(&src);
-        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
-
-        self.rgb_to_lab(&tgt);
-        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
-*/
-
-        self.pixels = src;
+    pub fn cartoonify(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
+        self.bilateral_filter(radius, sigma_r, iter_count, incr);
 
         // self.median_filter(radius);
         // self.edge_detect();
         // enhance edge
-
     }
 
+    // Median filtering is implemented using:
+    // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
+    // the traditional impl is too expensive, especially for big radius(>= 9)
     fn median_filter(&mut self, radius: u32) {
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         if radius > self.height / 2 || radius > self.width / 2 { // todo: add this check for all other filter operators
@@ -449,9 +406,24 @@ impl Image {
 
     }
 
-    // make this fn public, for users to access, common application: edge-preserving denoise.
-    // add some comments on the page
-    pub fn bilateral_filter(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {
+    pub fn bilateral_filter(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) {
+        // target of each iteration is the source of next iteration, \
+        // when iter_count goes from 3 to 4(incr: true), we don't need to run 4 iterations, \
+        // just reuse the self.pixels()
+        let mut src = if incr {self.pixels.clone()} else {self.pixels_bk.clone()};
+        let mut tgt = vec![255_u8; (self.width * self.height) as usize * 4];
+        log!("bilateral filter arguments: radius/sigma_r/iter_count/incr: {:?}/{:?}/{:?}/{:?}", radius, sigma_r, iter_count, incr);
+
+        for c in 0..iter_count {
+            log!("iter count:{:?}/{:?}", c + 1, iter_count + 1);
+            self.rgb_to_lab(&src);
+            self.iterative_bf(&src, &mut tgt, radius, sigma_r);
+            std::mem::swap(&mut src, &mut tgt)
+        }
+        self.pixels = if iter_count % 2 == 0 {src} else {tgt};
+    }
+
+    fn iterative_bf(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {
         let sigma_d = radius as f64 / 2.0; // domain filter
         // let sigma_d = 0.84089642;
         let gaussian = |x: i32, y: i32| {
@@ -472,7 +444,8 @@ impl Image {
 
         let range_kernel = |x: f64| {
             // let a = -0.5 * x * x / (sigma_r * sigma_r);
-            //
+            // argument x should be squared before passing, then we do: "x * x" here
+            // so, I cancel them altogether: you don't sqrt, I don't raise you to 2nd power.
             let a = -0.5 * x / (sigma_r * sigma_r);
             1.0_f64.exp().powf(a)
         };
@@ -482,8 +455,8 @@ impl Image {
             let delta_l = l1 - l2;
             let delta_a = a1 - a2;
             let delta_b = b1 - b2;
-            // the diff will pass to range_kernel, which will multiply by itself, don't bother sqrt-ing it here
-            // in theory, the following is the correct diff
+            // the diff will pass to range_kernel, which will multiply by itself, so don't bother sqrt-ing it here
+            // I remembered, some articles say: the following is the correct diff
             // (delta_l * delta_l + delta_a * delta_a + delta_b * delta_b).sqrt() / (3.0_f64.sqrt())
             delta_l * delta_l + delta_a * delta_a + delta_b * delta_b
         };
@@ -493,8 +466,7 @@ impl Image {
         for row in 0..img_height {
             for col in 0..img_width {
                 // let mut sum = (0_f64, 0_f64, 0_f64);
-                let mut weight = (0.0, 0.0, 0.0);
-                let mut weight2 = 0.0;
+                let mut weight = 0.0;
                 let idx = (row * img_width + col) as usize;
                 let cur_pixel = (src[idx * 4 + 0], src[idx * 4 + 1], src[idx * 4 + 2]);
                 let mut new_value = (0.0, 0.0, 0.0);
@@ -522,17 +494,12 @@ impl Image {
                         new_value.0 += red as f64 * composite_weight;
                         new_value.1 += green as f64 * composite_weight;
                         new_value.2 += blue as f64 * composite_weight;
-
-                        weight.0 += composite_weight; // what's the point of using a tuple, one value is enough.
-                        weight.1 += composite_weight;
-                        weight.2 += composite_weight;
-
-                        weight2 += composite_weight;
+                        weight += composite_weight;
                     }
                 }
-                tgt[idx * 4 + 0] = (new_value.0 / weight2) as u8;
-                tgt[idx * 4 + 1] = (new_value.1 / weight2) as u8;
-                tgt[idx * 4 + 2] = (new_value.2 / weight2) as u8;
+                tgt[idx * 4 + 0] = (new_value.0 / weight) as u8;
+                tgt[idx * 4 + 1] = (new_value.1 / weight) as u8;
+                tgt[idx * 4 + 2] = (new_value.2 / weight) as u8;
             }
         }
     }
