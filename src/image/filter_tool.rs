@@ -255,12 +255,57 @@ impl Image {
     // Median filtering is implemented using:
     // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
     // the traditional impl is too expensive, especially for big radius(>= 9)
+    // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the step, \
+    // how about downsample the image to 1/4, do the bilateral filter, and other steps, then at the last step, upsample to original size,\
+    // cartoonifying will definitely quantize color, lose many details, ....
     pub fn cartoonify(&mut self, radius: u32, sigma_r: f64) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
-        self.bilateral_filter(radius, sigma_r);
+        let img_size = (self.width * self.height) as usize;
+
+        let mut src = self.pixels_bk.clone();
+        let mut tgt = vec![255_u8; img_size * 4];
+
+        // write a loop to make iterative call
+        self.rgb_to_lab(&src);
+        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
+
+        self.rgb_to_lab(&tgt);
+        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
+
+        self.rgb_to_lab(&src);
+        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
+
+        self.rgb_to_lab(&tgt);
+        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
+
+        self.rgb_to_lab(&src);
+        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
+
+        self.rgb_to_lab(&tgt);
+        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
+
+
+        /*
+        self.rgb_to_lab(&src);
+        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
+
+        self.rgb_to_lab(&tgt);
+        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
+*/
+
+        /*
+        self.rgb_to_lab(&src);
+        self.bilateral_filter(&src, &mut tgt, radius, sigma_r);
+
+        self.rgb_to_lab(&tgt);
+        self.bilateral_filter(&tgt, &mut src, radius, sigma_r);
+*/
+
+        self.pixels = src;
+
         // self.median_filter(radius);
         // self.edge_detect();
         // enhance edge
-        //
+
     }
 
     fn median_filter(&mut self, radius: u32) {
@@ -402,15 +447,13 @@ impl Image {
                 + self.pixels[idx as usize * 4 + 2] as f64 * 0.1140).round() as u8
         ).collect::<Vec<_>>(); // 255.0 * 0.2989 + 255.0 * 0.5870 + 255.0 * 0.1140 = 254.9744999, so there is no need to do .max(255.0) clamp
 
-
-
-
     }
 
-    fn bilateral_filter(&mut self, radius: u32, sigma_r: f64) {
-        let sigma_d = radius as f64 / 2.0;
-        // let sigma = 0.84089642; // just a test
-        // let sigma_d = 3.0; // sigma for domain filter
+    // make this fn public, for users to access, common application: edge-preserving denoise.
+    // add some comments on the page
+    pub fn bilateral_filter(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {
+        let sigma_d = radius as f64 / 2.0; // domain filter
+        // let sigma_d = 0.84089642;
         let gaussian = |x: i32, y: i32| {
             // https://en.wikipedia.org/wiki/Gaussian_blur
             let a = -0.5 * ((x * x) as f64  + (y * y) as f64) / (sigma_d * sigma_d);
@@ -426,15 +469,23 @@ impl Image {
                 kernel.push(kernel_value);
             }
         }
-        // log!("kernel: {:?}", kernel);
 
-        let kernel_sum = kernel.iter().sum::<f64>();
-        // for k in kernel.iter_mut() { *k /= kernel_sum };
-
-        //let sigma_r = 20.0; // sigma for range filter
-        let range_kernel = |x: u32| {
-            let a = -0.5 * x as f64 * x as f64 / (sigma_r * sigma_r);
+        let range_kernel = |x: f64| {
+            // let a = -0.5 * x * x / (sigma_r * sigma_r);
+            //
+            let a = -0.5 * x / (sigma_r * sigma_r);
             1.0_f64.exp().powf(a)
+        };
+
+        // https://sensing.konicaminolta.us/blog/identifying-color-differences-using-l-a-b-or-l-c-h-coordinates/
+        let color_diff = |l1: f64, a1: f64, b1: f64, l2: f64, a2: f64, b2: f64| -> f64 {
+            let delta_l = l1 - l2;
+            let delta_a = a1 - a2;
+            let delta_b = b1 - b2;
+            // the diff will pass to range_kernel, which will multiply by itself, don't bother sqrt-ing it here
+            // in theory, the following is the correct diff
+            // (delta_l * delta_l + delta_a * delta_a + delta_b * delta_b).sqrt() / (3.0_f64.sqrt())
+            delta_l * delta_l + delta_a * delta_a + delta_b * delta_b
         };
 
         let img_width = self.width;
@@ -443,9 +494,11 @@ impl Image {
             for col in 0..img_width {
                 // let mut sum = (0_f64, 0_f64, 0_f64);
                 let mut weight = (0.0, 0.0, 0.0);
+                let mut weight2 = 0.0;
                 let idx = (row * img_width + col) as usize;
-                let cur_pixel = (self.pixels_bk[idx * 4 + 0], self.pixels_bk[idx * 4 + 1], self.pixels_bk[idx * 4 + 2]);
+                let cur_pixel = (src[idx * 4 + 0], src[idx * 4 + 1], src[idx * 4 + 2]);
                 let mut new_value = (0.0, 0.0, 0.0);
+                let (l1, a1, b1) = (self.lab[idx * 4 + 0], self.lab[idx * 4 + 1], self.lab[idx * 4 + 2]);
 
                 for i in 0..kernel_size {
                     for j in 0..kernel_size {
@@ -453,31 +506,127 @@ impl Image {
                         let c = (col as i32 - radius as i32 + j as i32).max(0).min(img_width as i32 - 1) as usize;
                         let idx = r * img_width as usize + c;
 
-                        let red = self.pixels_bk[idx * 4 + 0];
-                        let green = self.pixels_bk[idx * 4 + 1];
-                        let blue = self.pixels_bk[idx * 4 + 2];
+                        let red = src[idx * 4 + 0];
+                        let green = src[idx * 4 + 1];
+                        let blue = src[idx * 4 + 2];
+
+                        let (l2, a2, b2) = (self.lab[idx * 4 + 0], self.lab[idx * 4 + 1], self.lab[idx * 4 +2]);
 
                         let weight_domain = kernel[i * kernel_size + j];
-                        // in theory, it's better to use LAB color space, then calculate: sqrt(L*L + a*a + b*b)
-                        let range_diff = (red as i32 - cur_pixel.0 as i32).abs();
-                        let weight_range = range_kernel(range_diff as u32); // 是否需要考虑 == 0; == 255 的edge case.
+                        // let range_diff = (((red + green + blue) as i32 - (cur_pixel.0 + cur_pixel.1 + cur_pixel.2) as i32).abs() as f64 / 3.0);
+                        let range_diff = color_diff(l1, a1, b1, l2, a2, b2);
+
+                        let weight_range = range_kernel(range_diff);
                         let composite_weight = weight_domain * weight_range;
 
                         new_value.0 += red as f64 * composite_weight;
                         new_value.1 += green as f64 * composite_weight;
                         new_value.2 += blue as f64 * composite_weight;
 
-                        weight.0 += composite_weight;
+                        weight.0 += composite_weight; // what's the point of using a tuple, one value is enough.
                         weight.1 += composite_weight;
                         weight.2 += composite_weight;
+
+                        weight2 += composite_weight;
                     }
                 }
-                self.pixels[idx * 4 + 0] = (new_value.0 / weight.0 as f64) as u8;
-                self.pixels[idx * 4 + 1] = (new_value.1 / weight.1 as f64) as u8;
-                self.pixels[idx * 4 + 2] = (new_value.2 / weight.2 as f64) as u8;
+                tgt[idx * 4 + 0] = (new_value.0 / weight2) as u8;
+                tgt[idx * 4 + 1] = (new_value.1 / weight2) as u8;
+                tgt[idx * 4 + 2] = (new_value.2 / weight2) as u8;
             }
         }
-
     }
+
+    // modified from:
+    // https://stackoverflow.com/questions/4593469/java-how-to-convert-rgb-color-to-cie-lab
+    // L: [0, 100], a: [-128, 127] <-> [bluish green, pinkish magenta], b: [-128, 127] <-> [blue, yellow]
+
+    // Lab space is used to get color difference between 2 pixels, which is used in bilateral filter, \
+    // but the final cartoonish effect is no better than naive "(r1+b1+g1) - (r2+b2+g2)", which is simpler,\
+    // leave it to future research.
+    fn rgb_to_lab(&mut self, rgb: &[u8]) {
+        // cartoonifying effect need at least 4 iteration of bilateral filter,\
+        // each iteration need a new Lab based on the new rgb, so we pass a rgb vector.
+        let img_size = (self.width * self.height) as usize;
+        if self.lab.len() != img_size * 4 {
+            // L*a*b color space is only used in bilateral filter, JS will clear this vector when user is not doing anything Lab required.
+            self.lab = vec![0_f64; img_size * 4]
+        }
+        let (mut r, mut g, mut b, mut X, mut Y, mut Z, mut xr, mut yr, mut zr);
+        let Xr = 95.047;
+        let Yr = 100.0;
+        let Zr = 108.883;
+
+        for idx in 0..(self.width * self.height) {
+            // --------- RGB to XYZ ---------//
+            r = rgb[idx as usize * 4 + 0] as f64 / 255.0;
+            g = rgb[idx as usize * 4 + 1] as f64 / 255.0;
+            b = rgb[idx as usize * 4 + 2] as f64 / 255.0;
+
+            if r > 0.04045 {
+                // r = Math.pow( (r+0.055) / 1.055, 2.4);
+                r = ((r + 0.055) / 1.055).powf(2.4);
+            } else {
+                r /= 12.92;
+            }
+
+            if g > 0.04045 {
+                // g = Math.pow((g+0.055)/1.055,2.4);
+                g = ((g + 0.055) / 1.055).powf(2.4);
+            } else {
+                g /= 12.92;
+            }
+
+            if b > 0.04045 {
+                // b = Math.pow((b+0.055)/1.055,2.4);
+                b = ((b + 0.055) / 1.055).powf(2.4);
+            } else {
+                b /= 12.92 ;
+            }
+
+            r *= 100.0;
+            g *= 100.0;
+            b *= 100.0;
+
+            X =  0.4124 * r + 0.3576 * g + 0.1805 * b;
+            Y =  0.2126 * r + 0.7152 * g + 0.0722 * b;
+            Z =  0.0193 * r + 0.1192 * g + 0.9505 * b;
+
+            // --------- XYZ to Lab --------- //
+
+            xr = X / Xr;
+            yr = Y / Yr;
+            zr = Z / Zr;
+
+            if xr > 0.008856 {
+                // xr =  (float) Math.pow(xr, 1/3.);
+                xr = xr.powf(1.0/3.0)
+            } else {
+                // xr = (float) ((7.787 * xr) + 16 / 116.0);
+                xr = ((7.787 * xr) + 16.0 / 116.0);
+            }
+
+            if yr > 0.008856 {
+                // yr =  (float) Math.pow(yr, 1/3.);
+                yr = yr.powf(1.0/3.0);
+            } else {
+                // yr = (float) ((7.787 * yr) + 16 / 116.0);
+                yr = ((7.787 * yr) + 16.0 / 116.0);
+            }
+
+            if zr > 0.008856 {
+                // zr = (float) Math.pow(zr, 1 / 3.);
+                zr = zr.powf(1.0/3.0);
+            } else {
+                // zr = (float) ((7.787 * zr) + 16 / 116.0);
+                zr = ((7.787 * zr) + 16.0 / 116.0);
+            }
+
+            self.lab[idx as usize * 4 + 0] = (116.0 * yr) - 16.0;
+            self.lab[idx as usize * 4 + 1] = 500.0 * (xr - yr);
+            self.lab[idx as usize * 4 + 2] = 200.0 * (yr - zr);
+        }
+    }
+
 
 }

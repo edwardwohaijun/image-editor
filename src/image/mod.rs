@@ -40,6 +40,7 @@ pub struct Image {
     restore_rect: (u32, u32, u32, u32), // some actions, like Pixelate, need to restore the original pixelated area before running.
 
     hsi: Vec<Vec<f64>>, //  elements: Hue, Saturation, Intensity
+    lab: Vec<f64>, // L*a*b color space, used mostly in bilateral filter for calculating color difference. It'd get cleared when not used.
     dct: (Vec<f64>, Vec<f64>), // depreciated
 }
 
@@ -60,6 +61,7 @@ impl Image {
             restore_rect: (0, 0, 0, 0),
 
             hsi: vec![vec![], vec![], vec![]],
+            lab: vec![0_f64; 0],
             dct: Self::initialise_DCT(),
         }
     }
