@@ -1,0 +1,150 @@
+import imgObj from '../../common/imgObj'
+import React, {Component} from 'react';
+import ApplyButton from '../common/ApplyButton';
+
+export default class BilateralFilter extends Component {
+  constructor(props) {
+    super(props);
+    this.wasm_img = imgObj.get_wasm_img();
+    this.state = {
+      // radius: 5, // [1, 11, 2], [min, max, step]
+      sigma_domain: 3, // kernel width = sigma_domain * 2, 3 is default
+      sigma_range: 5, // don't bother changing it, 5 is an optimal value, leave it here for testing.
+      iter_count: 3,
+    };
+    this.incr = 0; // when iter_count goes from 3 to 4(this.incr = 4 - 3), we pass 1 as iter_count to wasm.bilateral_filter()
+    this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
+  }
+  // "radius = 8, iter_count > 4, sigma_range = 5" will generate good cartoonish feel.
+
+  componentDidMount = () => this.bf();
+  componentWillUnmount = () => {
+    if (!this.changeApplied) {
+      this.wasm_img.discard_change();
+      this.props.redraw();
+    }
+  };
+
+  bf = () => {
+    let iter_count = this.state.iter_count;
+    let incr = false;
+    if (this.incr > 0) {
+      iter_count = this.incr;
+      incr = true;
+    }
+    console.log("inside bf call, domain, range, iter_count, incr: ", this.state.sigma_domain, '/', this.state.sigma_range, '/', iter_count, '/', incr);
+    this.wasm_img.bilateral_filter(this.state.sigma_domain, this.state.sigma_range, iter_count, incr);
+    this.props.redraw();
+  };
+
+  onChange = evt => {
+    let tgt = evt.target;
+    let valueType = tgt.dataset.valueType;
+    let changeManner = tgt.dataset.valueChange;
+    let value;
+    switch (changeManner) {
+      case 'up': {
+        value = this.state[valueType] + 1;
+        break;
+      }
+      case 'down': {
+        value = this.state[valueType] - 1;
+        break;
+      }
+      case 'set': {
+        value = parseInt(tgt.value);
+        break;
+      }
+      default: return
+    }
+
+    if (valueType === 'sigma_domain') {
+      value = Math.min(Math.max(value, 1), 12);
+    } else if (valueType === 'iter_count') {
+      value = Math.min(Math.max(value, 1), 6);
+    } else {
+      return
+    }
+
+    if (value === this.state[valueType]) {
+      this.incr = 0;
+      return
+    } else {
+      this.incr = value - this.state[valueType]
+    }
+
+    this.setState({[valueType]: value}, () => this.bf());
+    this.changeApplied = false;
+    console.log("valueType/value: ", valueType, '/', value);
+  };
+
+  onApply = () => {
+    this.changeApplied = true; // this is not necessary, this component is about to be unmounted.
+    this.wasm_img.apply_change();
+    this.props.onSelectTool(''); // to unmount myself.
+  };
+
+  render() {
+    return (
+        <div style={{marginBottom: '180x', color: '#CCC'}}>
+          <div style={{marginBottom: '24px'}}>
+            <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+              <div>
+                <div>Iteration Count</div>
+                <span style={{fontSize: '11px'}}>More count, more smooth</span>
+              </div>
+              <div style={{paddingRight: '8px'}}>{this.state.saturation}</div>
+            </div>
+            <div style={{display: 'flex', alignItems: 'center'}}>
+              <button className='resize-view-btn' data-value-type='iter_count' data-value-change="down" onClick={this.onChange}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
+                  <path stroke="#525562" d="M9 0a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 17.36A8.34 8.34 0 1 1 17.36 9 8.35 8.35 0 0 1 9 17.36z"/>
+                  <path d="M13.54 8.68h-9a.35.35 0 0 0 0 .69h9a.35.35 0 1 0 0-.69z"/>
+                </svg>
+              </button>
+              <input type='range' data-value-type='iter_count' data-value-change="set"
+                     min='1' max='6' step='1' value={this.state.iter_count} onChange={this.onChange}/>
+              <button className='resize-view-btn' data-value-type='iter_count' data-value-change="up" onClick={this.onChange}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="white" viewBox="-1 -2 23 23" pointerEvents='none'>
+                  <path stroke="#525562" d="M10.39 0a10.39 10.39 0 1 0 10.38 10.39A10.4 10.4 0 0 0 10.39 0zm0 20A9.59 9.59 0 1 1 20 10.39 9.6 9.6 0 0 1 10.39 20z"/>
+                  <path d="M15.38 10h-4.59V5.59a.4.4 0 0 0-.8 0V10h-4.6a.4.4 0 1 0 0 .8H10v4.79a.4.4 0 0 0 .8 0v-4.8h4.59a.4.4 0 1 0 0-.8z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div style={{marginBottom: '24px'}}>
+            <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+              <div>
+                <div>Radius</div>
+                <span style={{fontSize: '11px'}}>Big image should have big radius</span>
+              </div>
+              <div style={{paddingRight: '8px'}}>{this.state.saturation}</div>
+            </div>
+            <div style={{display: 'flex', alignItems: 'center'}}>
+              <button className='resize-view-btn' data-value-type='sigma_domain' data-value-change="down" onClick={this.onChange}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
+                  <path stroke="#525562" d="M9 0a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 17.36A8.34 8.34 0 1 1 17.36 9 8.35 8.35 0 0 1 9 17.36z"/>
+                  <path d="M13.54 8.68h-9a.35.35 0 0 0 0 .69h9a.35.35 0 1 0 0-.69z"/>
+                </svg>
+              </button>
+              <input type='range' data-value-type='sigma_domain' data-value-change="set"
+                     min='1' max='12' step='1' value={this.state.sigma_domain} onChange={this.onChange}/>
+              <button className='resize-view-btn' data-value-type='sigma_domain' data-value-change="up" onClick={this.onChange}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="white" viewBox="-1 -2 23 23" pointerEvents='none'>
+                  <path stroke="#525562" d="M10.39 0a10.39 10.39 0 1 0 10.38 10.39A10.4 10.4 0 0 0 10.39 0zm0 20A9.59 9.59 0 1 1 20 10.39 9.6 9.6 0 0 1 10.39 20z"/>
+                  <path d="M15.38 10h-4.59V5.59a.4.4 0 0 0-.8 0V10h-4.6a.4.4 0 1 0 0 .8H10v4.79a.4.4 0 0 0 .8 0v-4.8h4.59a.4.4 0 1 0 0-.8z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <ApplyButton onApply={this.onApply}/>
+
+          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
+            Bilateral filter is a edge-preserving blurring filter, it's mostly used to remove noise.
+            Open 'EddieRedmayne' img, apply this filter, see the result with your own eyes.
+          </p>
+        </div>
+    )}
+}

@@ -407,20 +407,24 @@ impl Image {
     }
 
     pub fn bilateral_filter(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) {
+        // todo: add validity check, every arguments should have a range
+
         // target of each iteration is the source of next iteration, \
         // when iter_count goes from 3 to 4(incr: true), we don't need to run 4 iterations, \
-        // just reuse the self.pixels()
+        // just reuse the self.pixels().
         let mut src = if incr {self.pixels.clone()} else {self.pixels_bk.clone()};
         let mut tgt = vec![255_u8; (self.width * self.height) as usize * 4];
         log!("bilateral filter arguments: radius/sigma_r/iter_count/incr: {:?}/{:?}/{:?}/{:?}", radius, sigma_r, iter_count, incr);
 
         for c in 0..iter_count {
-            log!("iter count:{:?}/{:?}", c + 1, iter_count + 1);
             self.rgb_to_lab(&src);
             self.iterative_bf(&src, &mut tgt, radius, sigma_r);
-            std::mem::swap(&mut src, &mut tgt)
+            std::mem::swap(&mut src, &mut tgt);
         }
-        self.pixels = if iter_count % 2 == 0 {src} else {tgt};
+
+        // if iter_count is odd, it looks like self.pixels should get assigned "tgt",\
+        // but since there is a "std::mem::swap" at the end of for-loop iteration, so "src" should be assigned instead.
+        self.pixels = if iter_count % 2 == 0 {tgt} else {src};
     }
 
     fn iterative_bf(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {

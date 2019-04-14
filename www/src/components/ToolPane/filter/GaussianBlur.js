@@ -2,7 +2,7 @@ import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
 import ApplyButton from '../common/ApplyButton';
 
-export default class Blur extends Component {
+export default class GaussianBlur extends Component {
   constructor(props) {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
@@ -22,7 +22,7 @@ export default class Blur extends Component {
     }
   };
 
-  blur = () => { // in th future, more blur will be added, like motion blur
+  blur = () => {
     this.wasm_img.gaussian_blur(this.state.radius);
     this.props.redraw();
   };
@@ -89,6 +89,11 @@ export default class Blur extends Component {
             </div>
           </div>
           <ApplyButton onApply={this.onApply}/>
+
+          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
+            Gaussian blur is mostly used for removing noise, frosted glass effect.
+            This implementation... do I need to mention sth technical here??
+          </p>
         </div>
     )}
 }

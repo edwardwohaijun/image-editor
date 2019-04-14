@@ -37,7 +37,7 @@ export default class OpenImage extends Component {
     this.props.loadImage(evt.target.files[0]);
   };
 
-  toggleCameraModal = () => this.setState({openCamera: !this.state.openCamera})
+  toggleCameraModal = () => this.setState({openCamera: !this.state.openCamera});
 
   onGoToURL = evt => {
     let url = evt.target.parentElement.querySelector('#img-url').value;
@@ -79,7 +79,9 @@ export default class OpenImage extends Component {
                   </li>
                   <li className='test-image clickable' id='/img/JusticeLeague/wonder-woman.jpg'>DC/wonder-woman</li>
                   <li className='test-image clickable' id='/img/Avengers/endgame.png'>Avengers/endgame</li>
-                  <li className='test-image clickable' id='/img/EddieRedmayne.jpg'>Eddie Redmayne (bilateral filtering)</li>
+                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EmmaStone1.jpg'>Emma Stone 1 (remove freckles)</li>
+                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EmmaStone2.jpg'>Emma Stone 2 (remove freckles)</li>
+                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EddieRedmayne.jpg'>Eddie Redmayne (remove freckles)</li>
                   <li className='test-image clickable' id='/img/TrueBlood.jpg'>True Blood (temperature adjust)</li>
                   <li className='test-image clickable' id='/img/lowContrast/kitty.jpg'>Kitty (Low contrast)</li>
                   <li className='test-image clickable' id='/img/lowContrast/forest.jpg'>Forest (low contrast - too dark)</li>
