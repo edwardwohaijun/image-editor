@@ -11,6 +11,7 @@ class Pixelate extends Component {
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
       blockSize: 7, // min: 3, max: 11, step: 2
+      handlerVisible: true,
     };
     this.region = {
       x: 0, y: 0, width: 0, height: 0,
@@ -105,6 +106,14 @@ class Pixelate extends Component {
     this.props.onSelectTool(''); // to unmount myself.
   };
 
+  toggleHandlers = evt => {
+    let handler = document.getElementById('canvas-handler');
+    if (handler) {
+      handler.style.visibility = evt.target.checked ? 'visible' : 'hidden';
+      this.setState({handlerVisible: !this.state.handlerVisible})
+    }
+  };
+
 // the default rect should have a minimum w/h, in case the input img is smaller than this, use img size as rect's w/h
   render() {
     return (
@@ -125,6 +134,15 @@ class Pixelate extends Component {
                 <path d="M15.38 10h-4.59V5.59a.4.4 0 0 0-.8 0V10h-4.6a.4.4 0 1 0 0 .8H10v4.79a.4.4 0 0 0 .8 0v-4.8h4.59a.4.4 0 1 0 0-.8z"/>
               </svg>
             </button>
+          </div>
+
+          <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
+            <div>Show handler</div>
+            <div>
+              <input type="checkbox" id="toggle-pixelate-handlers" className='toggle-input' style={{display:'none'}}
+                     checked={this.state.handlerVisible} onChange={this.toggleHandlers} />
+              <label htmlFor="toggle-pixelate-handlers" className="toggle-label"><span /></label>
+            </div>
           </div>
 
           <ApplyButton onApply={this.onApply}/>
