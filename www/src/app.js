@@ -28,6 +28,10 @@ let initialState = {
       visible: false,  // similar to above
       position: {x: 0, y: 0, width: 0, height: 0}, // pixelateHandler is part of Canvas component, whereas, Filter/Pixelate is another independent component, \
     }), // and they need to share these 4 parameters.
+    miniHandlers: fromJS({
+      visible: false,
+      heights: {top: 0, bottom: 0},
+    }),
 };
 
 let store = createStore(reducers, initialState, compose(

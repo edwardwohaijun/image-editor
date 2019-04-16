@@ -26,7 +26,7 @@ export default class Cartoonify extends Component {
     // second arg is range sigma, which has nothing to do with image dimension, so just leave it unchanged for all dimensions.
     // range sigma is for checking similarity between 2 color pixels. I use L*a*b to get the diff, which is a little bit expensive, \
     // for naive and lightweight impl, use ((r1+g1+b1) - (r2+g2+b2)).abs(), but the argument value should fall between [40, 60] for all dimensions.
-    this.wasm_img.cartoonify(4, 5, 2, false); // Gaussian sigma(std dev)
+    this.wasm_img.cartoonify(4, 5, 3, false); // Gaussian sigma(std dev)
     // range sigma should not be larger than 10 for all dimension, because it's the color difference, which has nothing to do with space domain
 
     // if color diff is calculated using Lab, then sigma range must be <= 10, \

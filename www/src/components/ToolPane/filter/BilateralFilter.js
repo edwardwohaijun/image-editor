@@ -7,7 +7,6 @@ export default class BilateralFilter extends Component {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
-      // radius: 5, // [1, 11, 2], [min, max, step]
       sigma_domain: 3, // kernel width = sigma_domain * 2, 3 is default
       sigma_range: 5, // don't bother changing it, 5 is an optimal value, leave it here for testing.
       iter_count: 3,
@@ -26,13 +25,15 @@ export default class BilateralFilter extends Component {
   };
 
   bf = () => {
+    // this.incr is for iter_count, but when user change sigma_domain, we should pass 'incr = false' to recreate img from scratch, \
+    // because the current img is based on old sigma_domain. To minimize the computation, just forget it.
     let iter_count = this.state.iter_count;
     let incr = false;
     if (this.incr > 0) {
       iter_count = this.incr;
       incr = true;
     }
-    console.log("inside bf call, domain, range, iter_count, incr: ", this.state.sigma_domain, '/', this.state.sigma_range, '/', iter_count, '/', incr);
+    // console.log("inside bf call, domain, range, iter_count, incr: ", this.state.sigma_domain, '/', this.state.sigma_range, '/', iter_count, '/', incr);
     this.wasm_img.bilateral_filter(this.state.sigma_domain, this.state.sigma_range, iter_count, incr);
     this.props.redraw();
   };
@@ -75,7 +76,7 @@ export default class BilateralFilter extends Component {
 
     this.setState({[valueType]: value}, () => this.bf());
     this.changeApplied = false;
-    console.log("valueType/value: ", valueType, '/', value);
+    //console.log("valueType/value: ", valueType, '/', value);
   };
 
   onApply = () => {

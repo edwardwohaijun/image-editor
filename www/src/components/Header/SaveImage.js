@@ -32,7 +32,7 @@ export default class Save extends Component {
             link.download = "download.png";
             link.href = URL.createObjectURL(blob);
             link.click();
-          }, 'image/png'); // todo: add a img quality slider
+          }, 'image/png'); // todo: add a img quality slider(jpeg only), and allow users to choose file format.
         });
   };
 

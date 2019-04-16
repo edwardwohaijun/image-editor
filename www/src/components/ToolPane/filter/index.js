@@ -1,9 +1,9 @@
 import imgObj from '../../common/imgObj'
 import React, {Component} from 'react';
-import Cartoonify from './Cartoonify';
+// import Cartoonify from './Cartoonify';
 import GaussianBlur from './GaussianBlur';
 import BilateralFilter from './BilateralFilter';
-//import Miniaturize from './Miniaturize';
+import Miniaturize from './Miniaturize';
 //import MotionBlur from './MotionBlur';
 import Pixelate from './Pixelate';
 //import Sharpen from './Sharpen';
@@ -40,14 +40,16 @@ class FilterTool extends Component {
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-bilateral-filter' selectedTool={this.state.selectedTool} label='SMOOTHEN' alertLevel="intermediate">
             <BilateralFilter onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
           </ToolHeader>
-          <ToolHeader onSelect={this.onSelectTool} toolID='filter-cartoonify' selectedTool={this.state.selectedTool} label='CARTOONIFY' alertLevel="high">
-            <Cartoonify onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
-          </ToolHeader>
 
-          {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
+          {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-cartoonify' selectedTool={this.state.selectedTool} label='CARTOONIFY' alertLevel="high">
+            <Cartoonify onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
+          </ToolHeader>*/}
+
+          <ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
             <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>
-          <ToolHeader onSelect={this.onSelectTool} toolID='filter-motionblur' selectedTool={this.state.selectedTool} label='MOTION BLUR'>
+
+          {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-motionblur' selectedTool={this.state.selectedTool} label='MOTION BLUR'>
             <MotionBlur onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>*/}
 

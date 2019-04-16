@@ -21,8 +21,9 @@ class Main extends Component {
     // this.imgSrc = '/img/lake.jpg';
     // this.imgSrc = '/img/true_blood_cold_temperature.jpg';
     // this.imgSrc = '/img/endgame.png';
-    this.imgSrc = '/img/cap.png';
+    // this.imgSrc = '/img/cap.png';
     // this.imgSrc = '/img/EddieRedmayne.jpg';
+    this.imgSrc = '/img/miniaturize/constructionSite1.jpg'
 
     // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
@@ -78,10 +79,10 @@ class Main extends Component {
 
     // todo: moving handler left/top/width/height into redux, let those handlers respond on changes
     // it's too easy to forget to add the following check after adding a new handlers
-    if (this.props.cropHandlersVisible || this.props.pixelateHandlersVisible) {
+    if (this.props.cropHandlersVisible || this.props.pixelateHandlersVisible || this.props.miniHandlersVisible) {
       let handlers = document.getElementById('canvas-handler');
       handlers.style.left = left - 9 + 20 + 'px'; // 9 is imgHandler's radius, canvas has 20px margin
-      handlers.style.top = top - 9 + 20 + 'px';
+      handlers.style.top = top - 9 + 20 + 'px'; // todo: 9 has been made an constant, use it.
       handlers.style.width = newWidth + 18 + 'px';
       handlers.style.height = newHeight + 18 + 'px';
     }
@@ -183,7 +184,8 @@ class Main extends Component {
 const mapStateToProps = state => ({
       zoomRatio: state.imgStat.get('zoomRatio'),
       cropHandlersVisible: state.cropHandlersVisible,
-      pixelateHandlersVisible: state.pixelateHandlers.get('visible')
+      pixelateHandlersVisible: state.pixelateHandlers.get('visible'),
+      miniHandlersVisible: state.miniHandlers.get('visible'),
 });
 const mapDispatchToProps = dispatch => bindActionCreators({setZoomRatio, setWidthHeight}, dispatch);
 export default connect(mapStateToProps, mapDispatchToProps)(Main);
