@@ -2,6 +2,7 @@ extern crate wasm_bindgen;
 use wasm_bindgen::prelude::*;
 use std::cmp;
 use super::Image;
+use super::Operation;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -14,7 +15,7 @@ impl Image {
     pub fn crop(&mut self, top_x: i32, top_y: i32, width: u32, height: u32) {
         let mut top_x = top_x.max(0).min(self.width_bk as i32);
         let mut top_y = top_y.max(0).min(self.height_bk as i32);
-        let mut width = width.min(self.width_bk);
+        let width = width.min(self.width_bk);
         let height = height.min(self.height_bk);
 
         if top_x as u32 + width > self.width_bk {
@@ -45,6 +46,7 @@ impl Image {
         self.pixels = new_pixels;
         self.width = width;
         self.height = height;
+        self.last_operation = Operation::Transform
     }
 
     pub fn rotate(&mut self, clockwise: bool) { // rotate 90
@@ -72,10 +74,12 @@ impl Image {
         self.pixels = new_pixels;
         self.width = h as u32;
         self.height = w as u32;
+        self.last_operation = Operation::Transform
     }
 
     pub fn rotate_by(&mut self) { // rotate by a specified degree
 
+        self.last_operation = Operation::Transform
     }
 
     // flip the image vertically
@@ -90,6 +94,7 @@ impl Image {
             rows[h - row_idx - 1].swap_with_slice(tmp_row_ref);
             rows[row_idx].swap_with_slice(tmp_row_ref);
         }
+        self.last_operation = Operation::Transform
     }
 
     // flip the image horizontally
@@ -115,6 +120,7 @@ impl Image {
                 row[pixel_idx * 4 + 3] = ((tmp_row_ref[pixel_idx] >> 0) & 0xff) as u8;
             }
         }
+        self.last_operation = Operation::Transform
     }
 
     pub fn scale(&mut self, factor: f64) {
@@ -148,6 +154,7 @@ impl Image {
         self.pixels = new_pixels;
         self.width = w;
         self.height = h;
+        self.last_operation = Operation::Transform
     }
 
     // todo: move this into util modules as an independent fn
@@ -195,8 +202,10 @@ impl Image {
         }
     }
 
+    /*
     fn bicubic_interpolate(&mut self, x: f64, y: f64, pixel_buf: &mut Vec<u8>) {
 
     }
+    */
 
 }

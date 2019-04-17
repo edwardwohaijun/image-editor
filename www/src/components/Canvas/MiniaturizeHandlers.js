@@ -34,17 +34,6 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
     this.handlerMovingY = 0;
   }
 
-  /*
-  setPixelateRegion = () => {
-    let ratio = this.props.zoomRatio;
-    let x = Math.round((this.handlerX - CIRCLE_RADIUS) / ratio);
-    let y = Math.round((this.handlerY - CIRCLE_RADIUS) / ratio);
-    let width = Math.round(this.handlerWidth / ratio);
-    let height = Math.round(this.handlerHeight / ratio);
-    this.props.setPixelateHandlersPosition({x, y, width, height});
-  };
-  */
-
   setMiniRegion = () => {
     let ratio = this.props.zoomRatio;
     //let x = Math.round((this.handlerX - CIRCLE_RADIUS) / ratio);
@@ -128,6 +117,7 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
     this.setState({selectedHandler: ''});
   };
 
+  // todo: make sure bellow part can't exceed top part, and vice versa
   onMouseMove = evt => {
     if (!this.state.selectedHandler) {
       return

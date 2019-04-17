@@ -5,6 +5,7 @@ use std::cmp;
 use std::iter::Iterator;
 use wasm_bindgen::prelude::*;
 use super::Image;
+use super::Operation;
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
@@ -29,15 +30,14 @@ impl Image {
         let p_height = p_height.max(1).min(img_height);
 
         if top_x + p_width > img_width as u32 || top_y + p_height > img_height as u32 {
-            // validation check is done in JS, Rust check is to prevent panic.
+            // validation check is also done in JS, Rust check is to prevent panic.
             return
         }
 
-        self.restore_area();
+        self.restore_area(false);
 
         let mut x; // X/Y position of pixelated region in original img
         let mut y;
-
         // save each pixel's coordinate in block
         let mut block_position = vec![(0_usize, 0_usize); (block_size * block_size) as usize];
         let mut block_avg;
@@ -75,28 +75,36 @@ impl Image {
                 }
             }
         }
-        self.restore_rect = (top_x, top_y, p_width, p_height)
+        self.last_operation = Operation::Pixelate {top_x, top_y, width: p_width, height: p_height}
         // we need to regenerate HSI, after user applying the changes, but it have to be invoked in JS
     }
 
-    // when user move the pixelatedRegion, we need to restore the previous region to the original state, before applying the new changes.
-    fn restore_area(&mut self) {
-        let (x, y, width, height) = self.restore_rect;
-        if x == 0 && y == 0 && width == 0 && height == 0 { // this is the initial value when Image object is created for the first time.
-            return
-        }
+    // when user move the pixelatedRegion/miniaturizedRegion, we need to restore the previous region to the original state, before applying the new changes.
+    // is_top is for miniaturize only, this is anti-pattern, but I don't want to write 2 fn for similar cases.
+    fn restore_area(&mut self, is_top: bool) {
+        match self.last_operation {
+            Operation::Pixelate {top_x, top_y, width, height} => {
+                if top_x == 0 && top_y == 0 && width == 0 && height == 0 {return}
+                let img_width = self.width;
+                let mut idx: usize;
 
-        let img_width = self.width;
-        let img_height = self.height;
-        let mut idx: usize;
-
-        for row in y..(y+height) {
-            for col in x..(x+width) {
-                idx = (row * img_width + col) as usize;
-                self.pixels[idx * 4 + 0] = self.pixels_bk[idx * 4 + 0];
-                self.pixels[idx * 4 + 1] = self.pixels_bk[idx * 4 + 1];
-                self.pixels[idx * 4 + 2] = self.pixels_bk[idx * 4 + 2];
+                for row in top_y..(top_y + height) {
+                    for col in top_x..(top_x + width) {
+                        idx = (row * img_width + col) as usize;
+                        self.pixels[idx * 4 + 0] = self.pixels_bk[idx * 4 + 0];
+                        self.pixels[idx * 4 + 1] = self.pixels_bk[idx * 4 + 1];
+                        self.pixels[idx * 4 + 2] = self.pixels_bk[idx * 4 + 2];
+                    }
+                }
             }
+
+            Operation::Miniaturize {top_height, bottom_height} => {
+                if is_top && top_height == 0 {return}
+                if !is_top && bottom_height == 0 {return;}
+                
+
+            }
+            _ => {return}
         }
     }
 
@@ -106,6 +114,8 @@ impl Image {
 
         let img_width = self.width;
         let img_height = self.height;
+
+        self.restore_area(is_top);
         self.gaussian_blur2(sigma, top_x as i32, top_y as i32, img_width, height);
 
         // after applying the above gausssian_blur, there is a visual distinction in img between the blurred part and unblurred part,\
@@ -127,12 +137,6 @@ impl Image {
             gradient_range = (self.height - height)..(self.height - height + gradient_height);
         }
 
-        // let mut blur_ratio = if is_top {1.0} else {0.0};
-        // let ratio_step = if is_top {1.0 / (gradient_height) as f64} else {-1.0 / (gradient_height)};
-        // log!("gradient height: {:?}, ratio_step: {:?}", gradient_height, ratio_step);
-        // let gradient_range = if is_top {(height - gradient_height)..height} else {(self.height - height)..(self.height - height + gradient_height)};
-
-        // for row in (height - gradient_height)..height {
         for row in gradient_range {
             blur_ratio -= ratio_step;
             for col in 0..img_width {
@@ -143,7 +147,23 @@ impl Image {
             }
         }
 
-
+        self.last_operation = match self.last_operation {
+            // last op is also miniaturize, we update the changed height, leave the other height unchanged
+            Operation::Miniaturize {top_height, bottom_height} => {
+                if is_top {
+                    Operation::Miniaturize {top_height: height, bottom_height}
+                } else {
+                    Operation::Miniaturize {top_height, bottom_height: height}
+                }
+            }
+            _ => { // last op is not miniaturize
+                if is_top {
+                    Operation::Miniaturize {top_height: height, bottom_height: 0}
+                } else {
+                    Operation::Miniaturize {top_height: 0, bottom_height: height}
+                }
+            }
+        }
     }
 
     // This is the approximation of Gaussian Blur, but faster.
@@ -169,6 +189,7 @@ impl Image {
         self.box_blur_h(&src, &mut tgt, width, height,box_size[2] / 2);
         self.box_blur_v(&tgt, &mut src, width, height,box_size[2] / 2);
         self.pixels = src;
+        self.last_operation = Operation::GaussianBlur
     }
 
     pub fn gaussian_blur2(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32) {
@@ -218,6 +239,8 @@ impl Image {
                 self.pixels[idx_img * 4 + 2] = src[idx_box * 4 + 2];
             }
         }
+
+        self.last_operation = Operation::GaussianBlur
     }
 
     // todo: factor the following 2 fn into one
@@ -361,6 +384,7 @@ impl Image {
         // self.median_filter(radius);
         // self.edge_detect();
         // enhance edge
+        self.last_operation = Operation::Cartoonify
     }
 
 
@@ -530,6 +554,7 @@ impl Image {
         // if iter_count is odd, it looks like self.pixels should get assigned "tgt",\
         // but since there is a "std::mem::swap" at the end of for-loop iteration, so "src" should be assigned instead.
         self.pixels = if iter_count % 2 == 0 {tgt} else {src};
+        self.last_operation = Operation::BilateralFilter
     }
 
     // small radius with more iter_count yielded results that are more aesthetically pleasing, \

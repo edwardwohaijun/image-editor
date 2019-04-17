@@ -3,6 +3,7 @@ extern crate web_sys;
 
 use wasm_bindgen::prelude::*;
 use super::Image;
+use super::Operation;
 
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
@@ -13,31 +14,31 @@ macro_rules! log {
 
 #[wasm_bindgen]
 impl Image {
-    pub fn rgb_to_hsi(&mut self) {
+    pub fn rgb_to_hsi(&mut self) { // this should not be public
         let width = self.width as usize;
         let height = self.height as usize;
         let size = width * height;
         self.hsi = vec![vec![0_f64; size], vec![0_f64; size], vec![0_f64; size]];
 
         let two_pi = 2.0 * std::f64::consts::PI;
-        let (mut R, mut G, mut B, mut hue);
+        let (mut r, mut g, mut b, mut hue);
 
         for idx in 0..size {
             // normalize rgb value to [0, 1]
             // many online materials say: to normalise R/G/B into [0, 1], divide each value by (R+G+B)
             // but this is wrong, 255 should be the divisor
-            R = self.pixels_bk[idx * 4 + 0] as f64 / 255.0;
-            G = self.pixels_bk[idx * 4 + 1] as f64 / 255.0;
-            B = self.pixels_bk[idx * 4 + 2] as f64 / 255.0;
+            r = self.pixels_bk[idx * 4 + 0] as f64 / 255.0;
+            g = self.pixels_bk[idx * 4 + 1] as f64 / 255.0;
+            b = self.pixels_bk[idx * 4 + 2] as f64 / 255.0;
 
-            hue = (0.5 * ((R-G) + (R-B)) / (((R-G) * (R-G) + (R-B) * (G-B)).sqrt() + 0.001)).acos(); // adding 0.001 to avoid dividing by zero
-            if B > G {
+            hue = (0.5 * ((r-g) + (r-b)) / (((r-g) * (r-g) + (r-b) * (g-b)).sqrt() + 0.001)).acos(); // adding 0.001 to avoid dividing by zero
+            if b > g {
                 hue = two_pi - hue
             }
 
             self.hsi[0][idx] = hue;
-            self.hsi[1][idx] = 1.0 - 3.0 / (R + G + B) * R.min(G).min(B); // saturation
-            self.hsi[2][idx] = (R + G + B) / 3.0 // intensity
+            self.hsi[1][idx] = 1.0 - 3.0 / (r + g + b) * r.min(g).min(b); // saturation
+            self.hsi[2][idx] = (r + g + b) / 3.0 // intensity
         }
     }
 
@@ -94,6 +95,7 @@ impl Image {
 
         let intensity_ref = &vec![0_f64;0];
         self.hsi_to_rgb(hue_ref, saturation_ref, intensity_ref, t_amt);
+        self.last_operation = Operation::AdjustColor
     }
 
     // http://eng.usf.edu/~hady/courses/cap5400/rgb-to-hsi.pdf
@@ -164,7 +166,8 @@ impl Image {
             .iter().map(new_intensity).collect::<Vec<_>>();
         let hue_ref = &vec![0_f64;0];
         let saturation_ref = &vec![0_f64;0];
-        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0)
+        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0);
+        self.last_operation = Operation::AdjustColor
     }
 
     pub fn auto_adjust_intensity(&mut self) {
@@ -200,9 +203,11 @@ impl Image {
 
         let hue_ref = &vec![0_f64;0];
         let saturation_ref = &vec![0_f64;0];
-        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0)
+        self.hsi_to_rgb(hue_ref, saturation_ref, &intensity, 0);
+        self.last_operation = Operation::AdjustColor
     }
 
+    // todo: move this into self.cleanup(), do a match before cleanup.
     // HSI is not used as frequently as RGB, thus when not used, JS will call this fn to clear the HSI data,\
     // is this really necessary?
     pub fn clear_hsi(&mut self) {

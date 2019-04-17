@@ -7,7 +7,7 @@ use std::ops::Mul;
 use std::ops::Add;
 use std::default::Default;
 
-mod utils;
+// mod utils;
 // mod scale;
 // mod rotate;
 // mod compress;
@@ -27,6 +27,21 @@ macro_rules! log {
     }
 }
 
+pub enum Operation {
+    NoOp,
+    AdjustColor,
+    Transform, // further categorization is needed: flip(orientation), Rotate(i32), scale(factor)
+
+    // the the rect surrounding the pixelated area, saved for restoration before next Pixelate
+    Pixelate {top_x: u32, top_y: u32, width: u32, height: u32},
+    BilateralFilter,
+
+    // 2 areas aligning at the top/bottom edge need to be blurred, these 2 values are their height, saved for restoration before next miniaturze
+    Miniaturize {top_height: u32, bottom_height: u32},
+    GaussianBlur,
+    Cartoonify,
+}
+
 #[wasm_bindgen]
 pub struct Image {
     width: u32,
@@ -37,17 +52,16 @@ pub struct Image {
     width_bk: u32,
     height_bk: u32,
 
-    restore_rect: (u32, u32, u32, u32), // some actions, like Pixelate, need to restore the original pixelated area before running.
+    last_operation: Operation,
 
     hsi: Vec<Vec<f64>>, //  elements: Hue, Saturation, Intensity
     lab: Vec<f64>, // L*a*b color space, used mostly in bilateral filter for calculating color difference. It'd get cleared when not used.
-    dct: (Vec<f64>, Vec<f64>), // depreciated
+    // dct: (Vec<f64>, Vec<f64>),
 }
 
 #[wasm_bindgen]
 impl Image {
     pub fn new(w: u32, h: u32, buf: Vec<u8>) -> Image {
-        // utils::set_panic_hook();
         console_error_panic_hook::set_once();
         Image {
             width: w,
@@ -58,11 +72,11 @@ impl Image {
             width_bk: w,
             height_bk: h,
 
-            restore_rect: (0, 0, 0, 0),
+            last_operation: Operation::NoOp,
 
             hsi: vec![vec![], vec![], vec![]],
             lab: vec![0_f64; 0],
-            dct: Self::initialise_DCT(),
+            // dct: Self::initialise_dct(),
         }
     }
 
@@ -87,20 +101,36 @@ impl Image {
     pub fn width_bk(&self) -> u32 { self.width_bk }
     pub fn height_bk(&self) -> u32 { self.height_bk }
 
+    // todo: 有个clear_hsi, 也需要加进来.
+    fn cleanup(&mut self) {
+        match self.last_operation {
+            Operation::Pixelate {..} => {
+                self.last_operation = Operation::Pixelate {top_x: 0, top_y: 0, width: 0, height: 0}
+            }
+            Operation::Miniaturize {..} => {
+                self.last_operation = Operation::Miniaturize {top_height: 0, bottom_height: 0}
+            }
+            _ => {}
+        }
+    }
+
     pub fn apply_change(&mut self) {
         self.pixels_bk = self.pixels.clone();
         self.width_bk = self.width;
         self.height_bk = self.height;
+        self.cleanup()
     }
 
     pub fn discard_change(&mut self) {
         self.pixels = self.pixels_bk.clone();
         self.width = self.width_bk;
         self.height = self.height_bk;
+        self.cleanup()
     }
 
-    // looks like DCT is for JPEG, what about PNG/GIF?
-    fn initialise_DCT() -> (Vec<f64>, Vec<f64>) {
+    // DCT is for JPEG only.
+    /*
+    fn initialise_dct() -> (Vec<f64>, Vec<f64>) {
         const N: usize = 8;
         let mut dct = vec![0_f64; N * N];
         let first_row = 1 as f64/(N as f64).sqrt();
@@ -127,8 +157,9 @@ impl Image {
         }
         (dct, transposed)
     }
+    */
 
-    // todo: move it into util module
+    /*
     fn multiply_matrix<T>(buf: &mut [T], m1: &[T], m2: &[T])
         where T: Add<Output=T> + Mul<Output=T> + Default + Copy
     { // m1 and m2 are supposed to be a slice of 64 elements
@@ -143,7 +174,9 @@ impl Image {
         }
 
     }
+    */
 
+    /*
     fn test_multiply(&self) {
         let v1 = vec![
             1,2,3,4,5,6,7,8,
@@ -169,6 +202,7 @@ impl Image {
         Self::multiply_matrix(&mut result, &v1, &v2);
         log!("test matrix multiply: {:?}", result);
     }
+    */
 
     pub fn undo(&mut self) {
 
