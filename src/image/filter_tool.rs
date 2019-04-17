@@ -100,47 +100,147 @@ impl Image {
         }
     }
 
+    pub fn miniaturize(&mut self, sigma: f64, height: u32, is_top: bool) {
+        let top_x = 0;
+        let top_y = if is_top {0} else {self.height - height};
+
+        let img_width = self.width;
+        let img_height = self.height;
+        self.gaussian_blur2(sigma, top_x as i32, top_y as i32, img_width, height);
+
+        // after applying the above gausssian_blur, there is a visual distinction in img between the blurred part and unblurred part,\
+        // we need to, hhhr, blur this clear cut, or simply put, there must be a gradient from blurred part to unblurred part.
+        // but the final result is not satisfactory, subtle noticeable border still exits, leave it to future improvement
+
+        let gradient_height = (height as f64 * 0.33) as u32;
+        let mut blur_ratio;
+        let ratio_step;
+        let gradient_range;
+
+        if is_top {
+            blur_ratio = 1.0;
+            ratio_step = 1.0 / (gradient_height) as f64;
+            gradient_range = (height - gradient_height)..height;
+        } else {
+            blur_ratio = 0.0;
+            ratio_step = -1.0 / (gradient_height) as f64;
+            gradient_range = (self.height - height)..(self.height - height + gradient_height);
+        }
+
+        // let mut blur_ratio = if is_top {1.0} else {0.0};
+        // let ratio_step = if is_top {1.0 / (gradient_height) as f64} else {-1.0 / (gradient_height)};
+        // log!("gradient height: {:?}, ratio_step: {:?}", gradient_height, ratio_step);
+        // let gradient_range = if is_top {(height - gradient_height)..height} else {(self.height - height)..(self.height - height + gradient_height)};
+
+        // for row in (height - gradient_height)..height {
+        for row in gradient_range {
+            blur_ratio -= ratio_step;
+            for col in 0..img_width {
+                let idx = (row * img_width + col) as usize;
+                self.pixels[idx * 4 + 0] = (self.pixels[idx * 4 + 0] as f64 * blur_ratio + self.pixels_bk[idx * 4 + 0] as f64 * (1.0 - blur_ratio)).round() as u8;
+                self.pixels[idx * 4 + 1] = (self.pixels[idx * 4 + 1] as f64 * blur_ratio + self.pixels_bk[idx * 4 + 1] as f64 * (1.0 - blur_ratio)).round() as u8;
+                self.pixels[idx * 4 + 2] = (self.pixels[idx * 4 + 2] as f64 * blur_ratio + self.pixels_bk[idx * 4 + 2] as f64 * (1.0 - blur_ratio)).round() as u8;
+            }
+        }
+
+
+    }
+
     // This is the approximation of Gaussian Blur, but faster.
-    // Some code are just shamelessly copied from the following pages:
+    // Some code are just shamelessly copied from the following:
     // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
     pub fn gaussian_blur(&mut self, sigma: f64) {
         let num_pass = 3;
         let box_size = self.box_for_gaussian(sigma, num_pass);
 
-        // todo: optimise, because I already have self.pixel, self.pixels_bk
         let mut src = self.pixels_bk.clone();
         let mut tgt: Vec<u8> = vec![0_u8; (self.width * self.height * 4) as usize];
-        self.box_blur_h(&src, &mut tgt, box_size[0] / 2);
-        self.box_blur_v(&tgt, &mut src, box_size[0] / 2);
 
-        self.box_blur_h(&src, &mut tgt, box_size[1] / 2);
-        self.box_blur_v(&tgt, &mut src, box_size[1] / 2);
+        let width = self.width;
+        let height = self.height;
 
-        self.box_blur_h(&src, &mut tgt, box_size[2] / 2);
-        self.box_blur_v(&tgt, &mut src, box_size[2] / 2);
+        self.box_blur_h(&src, &mut tgt, width, height, box_size[0] / 2);
+        self.box_blur_v(&tgt, &mut src, width, height,box_size[0] / 2);
+
+        self.box_blur_h(&src, &mut tgt, width, height,box_size[1] / 2);
+        self.box_blur_v(&tgt, &mut src, width, height,box_size[1] / 2);
+
+        self.box_blur_h(&src, &mut tgt, width, height,box_size[2] / 2);
+        self.box_blur_v(&tgt, &mut src, width, height,box_size[2] / 2);
         self.pixels = src;
     }
 
-    // todo: factor the following 2 fn into one
-    fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) {
-        let radius = if radius % 2 == 0 {radius + 1} else {radius};
-        let avg = 1.0 / (radius * 2 + 1) as f64;
+    pub fn gaussian_blur2(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32) {
+        //log!("original: gaussian blur2 x/y/w/h: {:?}/{:?}/{:?}/{:?}", top_x, top_y, width, height);
+        let mut top_x = top_x.max(0).min(self.width_bk as i32);
+        let mut top_y = top_y.max(0).min(self.height_bk as i32);
+        let mut width = width.min(self.width_bk);
+        let height = height.min(self.height_bk);
+
+        if top_x as u32 + width > self.width_bk {
+            top_x = (self.width_bk - width) as i32
+        }
+        if top_y as u32 + height > self.height_bk {
+            top_y = (self.height_bk - height) as i32
+        }
+
         let img_width = self.width;
         let img_height = self.height;
 
+        // log!("after validation: gaussian blur2 x/y/w/h: {:?}/{:?}/{:?}/{:?}", top_x, top_y, width, height);
+
+        // 遇到 x=0, y=0, w=self.width, h=self.height, 则说明是针对整个img blur, 直接.., 总之, 特殊处理一下.
+        let mut tgt: Vec<u8> = vec![0_u8; (width * height) as usize * 4];
+        // to initialize the src with the top_x/y, width/height in self.pixels_bk,\
+        // it might be a little faster than copy one pixel at a time.
+        let mut src: Vec<u8> = Vec::with_capacity((width * height) as usize * 4);
+        for r in 0..height {
+            let start_idx = ((top_y as u32 + r) * img_width + top_x as u32) as usize;
+            let end_idx = start_idx + width as usize;
+            let row = &self.pixels_bk[(start_idx * 4)..(end_idx * 4)];
+            src.extend_from_slice(row);
+        }
+
+        let num_pass = 3; // 3 passes is a good balance between Gaussian approximation and computation
+        let box_size = self.box_for_gaussian(sigma, num_pass);
+        for idx in 0..num_pass {
+            self.box_blur_h(&src, &mut tgt, width, height, box_size[idx as usize] / 2);
+            self.box_blur_v(&tgt, &mut src, width, height,box_size[idx as usize] / 2);
+        }
+
+        for row in 0..height {
+            for col in 0..width {
+                let idx_img = ((top_y as u32 + row) * img_width + (top_x as u32 + col)) as usize;
+                let idx_box = (row * width + col) as usize;
+                self.pixels[idx_img * 4 + 0] = src[idx_box * 4 + 0];
+                self.pixels[idx_img * 4 + 1] = src[idx_box * 4 + 1];
+                self.pixels[idx_img * 4 + 2] = src[idx_box * 4 + 2];
+            }
+        }
+    }
+
+    // todo: factor the following 2 fn into one
+    fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
+        log!("box blur v: w/h/radius: {:?}, {:?}, {:?}", width, height, radius);
+        let radius = if radius % 2 == 0 {radius + 1} else {radius};
+        let avg = 1.0 / (radius * 2 + 1) as f64;
+        //let img_width = self.width;
+        //let img_height = self.height;
+
         let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
-        let mut box_sum = |row, col, start: i32, end: i32| {
+        let mut box_sum = |row: u32, col: u32, start: i32, end: i32| {
             for idx in 0..(radius * 2 + 1) {
-                let row = cmp::min(cmp::max(start + idx as i32, 0), img_height as i32 - 1) as u32;
-                let idx2 = (row * img_width) as usize + col as usize;
+                let row = cmp::min(cmp::max(start + idx as i32, 0), height as i32 - 1) as u32;
+                let idx2 = (row * width) as usize + col as usize;
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
                 // running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
-            let idx = (row * img_width + col) as usize;
+            // let idx = (row * img_width + col) as usize;
+            let idx = (row * width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
@@ -148,31 +248,31 @@ impl Image {
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
-        for col in 0..img_width {
-            for row in 0..img_height {
+        for col in 0..width {
+            for row in 0..height {
                 box_sum(row,col, row as i32 - radius as i32, row as i32 + radius as i32)
             }
         }
     }
 
-    fn box_blur_h(&mut self, src: &[u8], tgt: &mut [u8], radius: u32) {
+    fn box_blur_h(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
-        let img_width = self.width;
-        let img_height = self.height;
+        //let img_width = self.width;
+        //let img_height = self.height;
 
         let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         let mut box_sum = |row, col, start: i32, end: i32| {
             for idx in 0..(radius * 2 + 1) {
-                let col = cmp::min(cmp::max(start + idx as i32, 0), img_width as i32 - 1);
-                let idx2 = (row * img_width) as usize + col as usize;
+                let col = cmp::min(cmp::max(start + idx as i32, 0), width as i32 - 1);
+                let idx2 = (row * width) as usize + col as usize;
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
                 //running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
-            let idx = (row * img_width + col) as usize;
+            let idx = (row * width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
@@ -180,8 +280,8 @@ impl Image {
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
-        for row in 0..img_height {
-            for col in 0..img_width {
+        for row in 0..height {
+            for col in 0..width {
                 box_sum(row,col, col as i32 - radius as i32, col as i32 + radius as i32)
             }
         }
@@ -254,6 +354,7 @@ impl Image {
     // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the whole procedure, \
     // how about downsampling the image to 1/4, doing BF, and other steps, then at the last step, upsampling to original size,\
     // cartoonifying will definitely quantize color, lose many details, ....
+
     pub fn cartoonify(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
         self.bilateral_filter(radius, sigma_r, iter_count, incr);
 
@@ -261,6 +362,7 @@ impl Image {
         // self.edge_detect();
         // enhance edge
     }
+
 
     // Median filtering is implemented using:
     // https://pdfs.semanticscholar.org/6625/14a92ec7da77c8004b65dc559cc3a2b8a258.pdf
@@ -393,6 +495,7 @@ impl Image {
         }
     }
 
+    /*
     fn edge_detect(&mut self) {
         let w = self.width;
         let h = self.height;
@@ -402,23 +505,25 @@ impl Image {
             (self.pixels[idx as usize * 4 + 0] as f64 * 0.2989
                 + self.pixels[idx as usize * 4 + 1] as f64 * 0.5870
                 + self.pixels[idx as usize * 4 + 2] as f64 * 0.1140).round() as u8
-        ).collect::<Vec<_>>(); // 255.0 * 0.2989 + 255.0 * 0.5870 + 255.0 * 0.1140 = 254.9744999, so there is no need to do .max(255.0) clamp
+        ).collect::<Vec<_>>(); // 255.0 * 0.2989 + 255.0 * 0.5870 + 255.0 * 0.1140 = 254.9744999, so, no need to do .max(255.0) clamp
 
+        let mag_x = vec![0_f32; img_size];
+        let mag_y = vec![0_f32; img_size];
+        let direction = vec![0_f32; img_size];
     }
+    */
 
     pub fn bilateral_filter(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) {
         // todo: add validity check, every arguments should have a range
-
-        // target of each iteration is the source of next iteration, \
-        // when iter_count goes from 3 to 4(incr: true), we don't need to run 4 iterations, \
-        // just reuse the self.pixels().
+        // when iter_count goes from 3 to 4(incr == true), we just need to run 1 more iteration(not 4) by reusing self.pixels()), \
+        // which is the result of last 3 iterations.
+        // "incr == false" means iter_count is decreasing, we have to use self.pixels_bk() and restart from scratch.
         let mut src = if incr {self.pixels.clone()} else {self.pixels_bk.clone()};
         let mut tgt = vec![255_u8; (self.width * self.height) as usize * 4];
-        log!("bilateral filter arguments: radius/sigma_r/iter_count/incr: {:?}/{:?}/{:?}/{:?}", radius, sigma_r, iter_count, incr);
-
-        for c in 0..iter_count {
+        for _ in 0..iter_count {
             self.rgb_to_lab(&src);
             self.iterative_bf(&src, &mut tgt, radius, sigma_r);
+            // target of each iteration is the source of next iteration
             std::mem::swap(&mut src, &mut tgt);
         }
 
@@ -427,6 +532,8 @@ impl Image {
         self.pixels = if iter_count % 2 == 0 {tgt} else {src};
     }
 
+    // small radius with more iter_count yielded results that are more aesthetically pleasing, \
+    // and faster than larger radius with less iter_count.
     fn iterative_bf(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {
         let sigma_d = radius as f64 / 2.0; // domain filter
         // let sigma_d = 0.84089642;
@@ -449,7 +556,7 @@ impl Image {
         let range_kernel = |x: f64| {
             // let a = -0.5 * x * x / (sigma_r * sigma_r);
             // argument x should be squared before passing, then we do: "x * x" here
-            // so, I cancel them altogether: you don't sqrt, I don't raise you to 2nd power.
+            // so, they cancel each other, you don't sqrt, I don't raise you to 2nd power.
             let a = -0.5 * x / (sigma_r * sigma_r);
             1.0_f64.exp().powf(a)
         };
@@ -469,10 +576,9 @@ impl Image {
         let img_height = self.height;
         for row in 0..img_height {
             for col in 0..img_width {
-                // let mut sum = (0_f64, 0_f64, 0_f64);
                 let mut weight = 0.0;
                 let idx = (row * img_width + col) as usize;
-                let cur_pixel = (src[idx * 4 + 0], src[idx * 4 + 1], src[idx * 4 + 2]);
+                // let centroid_pixel = (src[idx * 4 + 0], src[idx * 4 + 1], src[idx * 4 + 2]);
                 let mut new_value = (0.0, 0.0, 0.0);
                 let (l1, a1, b1) = (self.lab[idx * 4 + 0], self.lab[idx * 4 + 1], self.lab[idx * 4 + 2]);
 
@@ -487,10 +593,9 @@ impl Image {
                         let blue = src[idx * 4 + 2];
 
                         let (l2, a2, b2) = (self.lab[idx * 4 + 0], self.lab[idx * 4 + 1], self.lab[idx * 4 +2]);
-
                         let weight_domain = kernel[i * kernel_size + j];
-                        // let range_diff = (((red + green + blue) as i32 - (cur_pixel.0 + cur_pixel.1 + cur_pixel.2) as i32).abs() as f64 / 3.0);
                         let range_diff = color_diff(l1, a1, b1, l2, a2, b2);
+                        // let range_diff = (((red + green + blue) as i32 - (centroid_pixel.0 + centroid_pixel.1 + centroid_pixel.2) as i32).abs() as f64 / 3.0);
 
                         let weight_range = range_kernel(range_diff);
                         let composite_weight = weight_domain * weight_range;
@@ -511,10 +616,6 @@ impl Image {
     // modified from:
     // https://stackoverflow.com/questions/4593469/java-how-to-convert-rgb-color-to-cie-lab
     // L: [0, 100], a: [-128, 127] <-> [bluish green, pinkish magenta], b: [-128, 127] <-> [blue, yellow]
-
-    // Lab space is used to get color difference between 2 pixels, which is used in bilateral filter, \
-    // but the final cartoonish effect is no better than naive "(r1+b1+g1) - (r2+b2+g2)", which is simpler,\
-    // leave it to future research.
     fn rgb_to_lab(&mut self, rgb: &[u8]) {
         // cartoonifying effect need at least 4 iteration of bilateral filter,\
         // each iteration need a new Lab based on the new rgb, so we pass a rgb vector.
@@ -598,6 +699,7 @@ impl Image {
             self.lab[idx as usize * 4 + 2] = 200.0 * (yr - zr);
         }
     }
+
 
 
 }

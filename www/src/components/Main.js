@@ -145,8 +145,10 @@ class Main extends Component {
 
     imgObj.imgBuff = img;
     let wasm_img = imgObj.get_wasm_img();
-    wasm_img.reuse(w, h, new Uint8Array(2)); // resizeCanvas call need width/height in wasm_img, but the img data(3rd arg) is not ready, just pass a dummy data to it.
-    this.resizeCanvas(true); // this must be called when wasm_img is ready.
+
+    //wasm_img.reuse(w, h, new Uint8Array(2)); // resizeCanvas call need width/height in wasm_img, but the img data(3rd arg) is not ready, just pass a dummy data to it.
+
+    // this.resizeCanvas(true); // this must be called when wasm_img is ready.
     // but, since we save w/h in redux, can resizeCanvas read w/h in redux rather than wasm_img, this could remove the above .reuse() call
     // todo, test above assert
 
@@ -162,6 +164,8 @@ class Main extends Component {
     tmpCtx.drawImage(img, 0, 0);
     let imgData = tmpCtx.getImageData(0, 0, w, h); // imgData has width/height/data props
     wasm_img.reuse(w, h, imgData.data);
+
+    this.resizeCanvas(true); // this must be called when wasm_img is ready(width/height, img_data all are ready), thus we put it at the end of this fn
   };
 
   render() {

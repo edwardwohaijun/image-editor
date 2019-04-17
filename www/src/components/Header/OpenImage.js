@@ -34,7 +34,9 @@ export default class OpenImage extends Component {
   onFileClick = evt => evt.target.value = null;
   onFileChange = evt => {
     this.setState({dropdownVisible: false});
-    this.props.loadImage(evt.target.files[0]);
+    let file = evt.target.files[0];
+    // setTimeout(() => this.props.loadImage(file, 2000));
+    this.props.loadImage(file)
   };
 
   toggleCameraModal = () => this.setState({openCamera: !this.state.openCamera});

@@ -12,15 +12,20 @@ class Miniaturize extends Component {
     this.state = {
       handlerVisible: true,
       blurRadius: 15, // [10, 20, 2]
+      sigma: 5,
       saturation: 0,
       brightness: 0,
     };
     this.heights = {top: 0, bottom: 0};
-    this.changeApplied = true;
+    this.changeApplied = false;
   }
 
   miniaturize = () => {
-    console.log('mniniaturize: ', this.heights)
+    // todo: validity check, make sure this.heights doesn't exceed boundaries.
+    this.wasm_img.miniaturize(9, this.heights.top, true);
+    this.wasm_img.miniaturize(9, this.heights.bottom, false);
+    this.props.redraw();
+
   };
 
   componentDidMount = () => this.props.showHandler(true);
@@ -53,11 +58,30 @@ class Miniaturize extends Component {
     this.props.onSelectTool(''); // to unmount myself.
   };
 
+
+  toggleHandlers = evt => {
+    let handler = document.getElementById('canvas-handler');
+    if (handler) {
+      handler.style.visibility = evt.target.checked ? 'visible' : 'hidden';
+      this.setState({handlerVisible: !this.state.handlerVisible})
+    }
+  };
+
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
           Miniaturize
           Please use an image with a top-down view
+
+          <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
+            <div>Show handler</div>
+            <div>
+              <input type="checkbox" id="toggle-mini-handlers" className='toggle-input' style={{display:'none'}}
+                     checked={this.state.handlerVisible} onChange={this.toggleHandlers} />
+              <label htmlFor="toggle-mini-handlers" className="toggle-label"><span /></label>
+            </div>
+          </div>
+
           <ApplyButton onApply={this.onApply}/>
         </div>
     )}

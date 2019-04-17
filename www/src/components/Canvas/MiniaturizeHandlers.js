@@ -51,7 +51,7 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
     let y = Math.round((this.handlerY - CIRCLE_RADIUS) / ratio);
     //let width = Math.round(this.handlerWidth / ratio);
     let height = Math.round(this.handlerHeight / ratio);
-    this.props.setMiniHeights({top: y, bottom: y + height});
+    this.props.setMiniHeights({top: y, bottom: this.props.imgHeight - (y + height)});
   };
 
   componentDidMount = () => this.setMiniRegion();
@@ -190,7 +190,7 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
         // {x: CIRCLE_RADIUS, y: CIRCLE_RADIUS, width: this.canvasWidth, height: this.canvasHeight}, // this handlers is copied from PixelateHandlers, there are many unused code, like this line,\
         {x: this.handlerX, y: this.handlerY, width: this.handlerWidth, height: this.handlerHeight} // I am too lazy to clean it up
     );
-    let path = <path d={pathAttribute} fill='#000' fillOpacity={0} stroke='#ccc' strokeWidth={2}/>;
+    let path = <path d={pathAttribute} fill='none' stroke='#ccc' strokeWidth={2} strokeDasharray="5,5"/>;
 
     let xOffset = this.handlerX - CIRCLE_RADIUS;
     let yOffset = this.handlerY - CIRCLE_RADIUS;
