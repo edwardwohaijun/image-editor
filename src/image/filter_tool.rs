@@ -123,7 +123,6 @@ impl Image {
         }
     }
 
-
     pub fn miniaturize(&mut self, sigma: f64, height: u32, is_top: bool) {
         let top_x = 0;
         let top_y = if is_top {0} else {self.height - height};
@@ -132,12 +131,11 @@ impl Image {
         let img_height = self.height;
 
         self.restore_area(is_top);
-        self.gaussian_blur2(sigma, top_x as i32, top_y as i32, img_width, height, false);
+        self.gaussian_blur(sigma, top_x as i32, top_y as i32, img_width, height, false);
 
         // after applying the above gausssian_blur, there is a visual distinction in img between the blurred part and unblurred part,\
         // we need to, hhhr, blur this clear cut, or simply put, there must be a gradient from blurred part to unblurred part.
         // but the final result is not satisfactory, subtle noticeable border still exits, leave it to future improvement
-
         let gradient_height = (height as f64 * 0.20) as u32;
         let mut blur_ratio;
         let ratio_step;
@@ -184,34 +182,17 @@ impl Image {
         };
     }
 
+    // this is a wrapper around gaussian_blur(), used for whole img blurring
+    pub fn blur(&mut self, sigma: f64) {
+        let (top_x, top_y, width, height, is_standalone) = (0, 0, self.width, self.height, true);
+        self.gaussian_blur(sigma, top_x, top_y, width, height, true)
+    }
+
     // This is the approximation of Gaussian Blur, but faster.
     // Some code are just shamelessly copied from the following:
     // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
-    // todo: depreciate this blur
-    pub fn gaussian_blur(&mut self, sigma: f64) {
-        let num_pass = 3;
-        let box_size = self.box_for_gaussian(sigma, num_pass);
-
-        let mut src = self.pixels_bk.clone();
-        let mut tgt: Vec<u8> = vec![0_u8; (self.width * self.height * 4) as usize];
-
-        let width = self.width;
-        let height = self.height;
-
-        self.box_blur_h(&src, &mut tgt, width, height, box_size[0] / 2);
-        self.box_blur_v(&tgt, &mut src, width, height,box_size[0] / 2);
-
-        self.box_blur_h(&src, &mut tgt, width, height,box_size[1] / 2);
-        self.box_blur_v(&tgt, &mut src, width, height,box_size[1] / 2);
-
-        self.box_blur_h(&src, &mut tgt, width, height,box_size[2] / 2);
-        self.box_blur_v(&tgt, &mut src, width, height,box_size[2] / 2);
-        self.pixels = src;
-        self.last_operation = Operation::GaussianBlur
-    }
-
-    pub fn gaussian_blur2(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32, is_standalone: bool) {
+    fn gaussian_blur(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32, is_standalone: bool) {
         let mut top_x = top_x.max(0).min(self.width_bk as i32);
         let mut top_y = top_y.max(0).min(self.height_bk as i32);
         let mut width = width.min(self.width_bk);
@@ -227,17 +208,22 @@ impl Image {
         let img_width = self.width;
         let img_height = self.height;
 
-        // 遇到 x=0, y=0, w=self.width, h=self.height, 则说明是针对整个img blur, 直接.., 总之, 特殊处理一下.
+        let whole_img_blur = if width == self.width && height == self.height {true} else {false};
         let mut tgt: Vec<u8> = vec![0_u8; (width * height) as usize * 4];
-        // to initialize the src with the top_x/y, width/height in self.pixels_bk,\
-        // it might be a little faster than copy one pixel at a time.
-        let mut src: Vec<u8> = Vec::with_capacity((width * height) as usize * 4);
-        for r in 0..height {
-            let start_idx = ((top_y as u32 + r) * img_width + top_x as u32) as usize;
-            let end_idx = start_idx + width as usize;
-            let row = &self.pixels_bk[(start_idx * 4)..(end_idx * 4)];
-            src.extend_from_slice(row);
-        }
+        let mut src = if whole_img_blur {
+            self.pixels_bk.clone()
+        } else {
+            // to initialize the src with the top_x/y, width/height in self.pixels_bk,\
+            // it might be a little faster than copy one pixel at a time.
+            let mut src: Vec<u8> = Vec::with_capacity((width * height) as usize * 4);
+            for r in 0..height {
+                let start_idx = ((top_y as u32 + r) * img_width + top_x as u32) as usize;
+                let end_idx = start_idx + width as usize;
+                let row = &self.pixels_bk[(start_idx * 4)..(end_idx * 4)];
+                src.extend_from_slice(row);
+            }
+            src
+        };
 
         let num_pass = 3; // 3 passes is a good balance between Gaussian approximation and computation
         let box_size = self.box_for_gaussian(sigma, num_pass);
@@ -246,13 +232,17 @@ impl Image {
             self.box_blur_v(&tgt, &mut src, width, height,box_size[idx as usize] / 2);
         }
 
-        for row in 0..height {
-            for col in 0..width {
-                let idx_img = ((top_y as u32 + row) * img_width + (top_x as u32 + col)) as usize;
-                let idx_box = (row * width + col) as usize;
-                self.pixels[idx_img * 4 + 0] = src[idx_box * 4 + 0];
-                self.pixels[idx_img * 4 + 1] = src[idx_box * 4 + 1];
-                self.pixels[idx_img * 4 + 2] = src[idx_box * 4 + 2];
+        if whole_img_blur {
+            self.pixels = src;
+        } else {
+            for row in 0..height {
+                for col in 0..width {
+                    let idx_img = ((top_y as u32 + row) * img_width + (top_x as u32 + col)) as usize;
+                    let idx_box = (row * width + col) as usize;
+                    self.pixels[idx_img * 4 + 0] = src[idx_box * 4 + 0];
+                    self.pixels[idx_img * 4 + 1] = src[idx_box * 4 + 1];
+                    self.pixels[idx_img * 4 + 2] = src[idx_box * 4 + 2];
+                }
             }
         }
 

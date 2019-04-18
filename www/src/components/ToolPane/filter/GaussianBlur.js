@@ -16,14 +16,13 @@ export default class GaussianBlur extends Component {
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {
-      console.log('discarding gaussian blur....');
       this.wasm_img.discard_change();
       this.props.redraw();
     }
   };
 
   blur = () => {
-    this.wasm_img.gaussian_blur(this.state.radius);
+    this.wasm_img.blur(this.state.radius);
     this.props.redraw();
   };
 
