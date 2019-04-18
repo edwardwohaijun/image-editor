@@ -76,7 +76,7 @@ class Miniaturize extends Component {
         <div style={{marginBottom: '180x', color: '#CCC'}}>
           Miniaturize
           Please use an image with a top-down view
-
+          {/* todo: add a contrast/brightness slider  */}
           <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
             <div>Show handler</div>
             <div>

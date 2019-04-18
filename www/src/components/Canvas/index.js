@@ -33,10 +33,12 @@ class Canvas extends Component {
   };
 
   render() {
+    // width: "calc(100vw - 76px)", - 56 - 20. 56: left-most vertical toolbar width, 20: leave white space between canvas and right most border
     return (
         <div className='scrollbar' id='canvas-container'
-             style={{width: '100%', position: 'absolute', bottom: '44px', top: 0, backgroundColor: '#1e2025'}}>
+             style={{width: this.props.containerWidth, position: 'absolute', bottom: '44px', top: 0, backgroundColor: '#1e2025'}}>
           <canvas id='canvas' ref={canvas => this.canvas = canvas} style={{position: 'absolute', margin: '20px'}} />
+          {/*<canvas id='canvas' ref={canvas => this.canvas = canvas} style={{position: 'absolute'}} />*/}
           {/* canvas must have a margin of 20px(larger than imgHandler radius is enough, otherwise the upper part of imgHandler of large canvas will be "cut off" */}
 
           {/* if new handlers are to be created, don't forget to update fn resizeCanvas() in Main */}

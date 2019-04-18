@@ -138,7 +138,7 @@ impl Image {
         // we need to, hhhr, blur this clear cut, or simply put, there must be a gradient from blurred part to unblurred part.
         // but the final result is not satisfactory, subtle noticeable border still exits, leave it to future improvement
 
-        let gradient_height = (height as f64 * 0.33) as u32;
+        let gradient_height = (height as f64 * 0.20) as u32;
         let mut blur_ratio;
         let ratio_step;
         let gradient_range;
@@ -152,6 +152,7 @@ impl Image {
             ratio_step = -1.0 / (gradient_height) as f64;
             gradient_range = (self.height - height)..(self.height - height + gradient_height);
         }
+        log!("gradient_height: {:?}, ratio_step: {:?}", gradient_height, ratio_step);
 
         for row in gradient_range {
             blur_ratio -= ratio_step;
@@ -187,6 +188,7 @@ impl Image {
     // Some code are just shamelessly copied from the following:
     // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
+    // todo: depreciate this blur
     pub fn gaussian_blur(&mut self, sigma: f64) {
         let num_pass = 3;
         let box_size = self.box_for_gaussian(sigma, num_pass);

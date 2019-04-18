@@ -7,6 +7,8 @@ import Canvas from './Canvas/index'
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 import {setZoomRatio, setWidthHeight} from "../actions";
+import {CIRCLE_RADIUS} from '../constants/handler';
+
 
 class Main extends Component {
   constructor(props) {
@@ -38,7 +40,7 @@ class Main extends Component {
     let canvas = document.getElementById('canvas');
     let container = document.getElementById('canvas-container');
 
-    let containerWidth = container.offsetWidth;  // clientWidth;
+    let containerWidth = container.offsetWidth - 256;  // clientWidth; todo: what if offsetWidth <= 256?????????????
     let containerHeight = container.offsetHeight;// clientHeight;
     let zoomRatio = 1.0;
     if (!autoFit) { // users manually zoom-in/out canvas
@@ -81,10 +83,10 @@ class Main extends Component {
     // it's too easy to forget to add the following check after adding a new handlers
     if (this.props.cropHandlersVisible || this.props.pixelateHandlersVisible || this.props.miniHandlersVisible) {
       let handlers = document.getElementById('canvas-handler');
-      handlers.style.left = left - 9 + 20 + 'px'; // 9 is imgHandler's radius, canvas has 20px margin
-      handlers.style.top = top - 9 + 20 + 'px'; // todo: 9 has been made an constant, use it.
-      handlers.style.width = newWidth + 18 + 'px';
-      handlers.style.height = newHeight + 18 + 'px';
+      handlers.style.left = left - CIRCLE_RADIUS + 20 + 'px'; // canvas has 20px margin
+      handlers.style.top = top - CIRCLE_RADIUS + 20 + 'px';
+      handlers.style.width = newWidth + 2 * CIRCLE_RADIUS + 'px';
+      handlers.style.height = newHeight + 2 * CIRCLE_RADIUS + 'px';
     }
   };
 
@@ -171,13 +173,14 @@ class Main extends Component {
   render() {
     let canvasParentStyle = {width: '100%', backgroundColor: '#1e2025'};
     canvasParentStyle.transform = this.state.selectedTool == null ? 'translate(0px, 0px)' : 'translate(250px, 0px)';
+    let containerWidth = this.state.selectedTool == null ? "calc(100vw - 76px)" : "calc(100vw - 332px)";
     return (
         <div>
           <Header resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} />
           <div style={{display: 'flex', position: 'relative', zIndex: '50',  bottom: '0px', width: '100%'}}>
             <ToolPane onSelectTool={this.onSelectTool} selectedTool={this.state.selectedTool}/>
             <div style={canvasParentStyle} id='canvas-parent'>
-              <Canvas resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} />
+              <Canvas resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} containerWidth={containerWidth}/>
               <Footer resizeCanvas={this.resizeCanvas}/>
             </div>
           </div>
