@@ -20,12 +20,14 @@ class Miniaturize extends Component {
     this.changeApplied = false;
   }
 
-  miniaturize = () => {
+  miniaturize = is_top => {
     // todo: validity check, make sure this.heights doesn't exceed boundaries.
-    this.wasm_img.miniaturize(9, this.heights.top, true);
-    this.wasm_img.miniaturize(9, this.heights.bottom, false);
+    if (is_top) { // todo: make sigma an argument, let users slide to change its value.
+      this.wasm_img.miniaturize(9, this.heights.top, is_top);
+    } else {
+      this.wasm_img.miniaturize(9, this.heights.bottom, is_top);
+    }
     this.props.redraw();
-
   };
 
   componentDidMount = () => this.props.showHandler(true);
@@ -40,16 +42,18 @@ class Miniaturize extends Component {
 
   componentDidUpdate = () => { // the only update is handler position, triggered from MinilHandlers by moving handlers.
     // but when miniHandlers get mounted, it'd call setMiniRegion() which is a redux action, \
-    // then componentDidUpdate react to this store change by calling the following miniaturize().
+    // then componentDidUpdate react to this store change by calling miniaturize().
     let top_height = this.props.heights.get('top');
     let bottom_height = this.props.heights.get('bottom');
-    if (top_height === this.heights.top && bottom_height === this.heights.bottom) {
-      return
+    if (this.heights.top !== top_height) {
+      this.heights.top = top_height;
+      this.miniaturize(true)
     }
-    this.heights.top = top_height;
-    this.heights.bottom = bottom_height;
+    if (this.heights.bottom !== bottom_height) {
+      this.heights.bottom = bottom_height;
+      this.miniaturize(false)
+    }
     this.changeApplied = false;
-    this.miniaturize();
   };
 
   onApply = () => {

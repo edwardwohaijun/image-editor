@@ -27,6 +27,7 @@ macro_rules! log {
     }
 }
 
+#[derive(Copy, Clone, Debug)] // it's affordable to have Operation Copy/Clone
 pub enum Operation {
     NoOp,
     AdjustColor,

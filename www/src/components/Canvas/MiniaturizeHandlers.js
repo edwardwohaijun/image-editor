@@ -87,10 +87,6 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
       return
     }
 
-    if (evt.target.id === 'handler-8') {
-      evt.target.style.cursor = 'grabbing'
-    }
-
     this.handlerMovingX = evt.clientX;
     this.handlerMovingY = evt.clientY;
     this.setState({
@@ -100,12 +96,7 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
 
   onMouseUp = evt => {
     if (this.state.selectedHandler) {
-      if (this.state.selectedHandler === 'handler-8') {
-        evt.target.style.cursor = 'grab'
-      }
-
       this.setState({selectedHandler: ''});
-      // this.setPixelateRegion();
       this.setMiniRegion();
     }
   };

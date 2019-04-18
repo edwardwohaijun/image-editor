@@ -82,31 +82,47 @@ impl Image {
     // when user move the pixelatedRegion/miniaturizedRegion, we need to restore the previous region to the original state, before applying the new changes.
     // is_top is for miniaturize only, this is anti-pattern, but I don't want to write 2 fn for similar cases.
     fn restore_area(&mut self, is_top: bool) {
-        match self.last_operation {
-            Operation::Pixelate {top_x, top_y, width, height} => {
-                if top_x == 0 && top_y == 0 && width == 0 && height == 0 {return}
-                let img_width = self.width;
-                let mut idx: usize;
+        let img_width = self.width;
+        let img_height = self.height;
 
-                for row in top_y..(top_y + height) {
-                    for col in top_x..(top_x + width) {
-                        idx = (row * img_width + col) as usize;
-                        self.pixels[idx * 4 + 0] = self.pixels_bk[idx * 4 + 0];
-                        self.pixels[idx * 4 + 1] = self.pixels_bk[idx * 4 + 1];
-                        self.pixels[idx * 4 + 2] = self.pixels_bk[idx * 4 + 2];
-                    }
+        // I have made Operation enum Copy/Clone, otherwise, you can't move self.last_operation
+        let last_op = self.last_operation;
+        let mut restore = |x, y, w, h| {
+            let mut idx: usize;
+            for row in y..(y + h) {
+                for col in x..(x + w) {
+                    idx = (row * img_width + col) as usize;
+                    self.pixels[idx * 4 + 0] = self.pixels_bk[idx * 4 + 0];
+                    self.pixels[idx * 4 + 1] = self.pixels_bk[idx * 4 + 1];
+                    self.pixels[idx * 4 + 2] = self.pixels_bk[idx * 4 + 2];
                 }
             }
+        };
 
-            Operation::Miniaturize {top_height, bottom_height} => {
-                if is_top && top_height == 0 {return}
-                if !is_top && bottom_height == 0 {return;}
-                
+        match last_op {
+            Operation::Pixelate {top_x, top_y, width, height} => {
+                if top_x == 0 && top_y == 0 && width == 0 && height == 0 {return}
 
+                restore(top_x, top_y, width, height)
             }
-            _ => {return}
+            Operation::Miniaturize {top_height, bottom_height} => {
+                let top_x = 0;
+                let top_y;
+                let width = img_width;
+                let height;
+                if is_top {
+                    top_y = 0;
+                    height = top_height
+                } else {
+                    top_y = img_height - bottom_height;
+                    height = bottom_height
+                }
+                restore(top_x, top_y, width, height)
+            }
+            _ => {return;}
         }
     }
+
 
     pub fn miniaturize(&mut self, sigma: f64, height: u32, is_top: bool) {
         let top_x = 0;
@@ -116,7 +132,7 @@ impl Image {
         let img_height = self.height;
 
         self.restore_area(is_top);
-        self.gaussian_blur2(sigma, top_x as i32, top_y as i32, img_width, height);
+        self.gaussian_blur2(sigma, top_x as i32, top_y as i32, img_width, height, false);
 
         // after applying the above gausssian_blur, there is a visual distinction in img between the blurred part and unblurred part,\
         // we need to, hhhr, blur this clear cut, or simply put, there must be a gradient from blurred part to unblurred part.
@@ -148,7 +164,7 @@ impl Image {
         }
 
         self.last_operation = match self.last_operation {
-            // last op is also miniaturize, we update the changed height, leave the other height unchanged
+            // if last op is also miniaturize, we update the changed height, leave the other height unchanged
             Operation::Miniaturize {top_height, bottom_height} => {
                 if is_top {
                     Operation::Miniaturize {top_height: height, bottom_height}
@@ -162,8 +178,9 @@ impl Image {
                 } else {
                     Operation::Miniaturize {top_height: 0, bottom_height: height}
                 }
+
             }
-        }
+        };
     }
 
     // This is the approximation of Gaussian Blur, but faster.
@@ -192,8 +209,7 @@ impl Image {
         self.last_operation = Operation::GaussianBlur
     }
 
-    pub fn gaussian_blur2(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32) {
-        //log!("original: gaussian blur2 x/y/w/h: {:?}/{:?}/{:?}/{:?}", top_x, top_y, width, height);
+    pub fn gaussian_blur2(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32, is_standalone: bool) {
         let mut top_x = top_x.max(0).min(self.width_bk as i32);
         let mut top_y = top_y.max(0).min(self.height_bk as i32);
         let mut width = width.min(self.width_bk);
@@ -208,8 +224,6 @@ impl Image {
 
         let img_width = self.width;
         let img_height = self.height;
-
-        // log!("after validation: gaussian blur2 x/y/w/h: {:?}/{:?}/{:?}/{:?}", top_x, top_y, width, height);
 
         // 遇到 x=0, y=0, w=self.width, h=self.height, 则说明是针对整个img blur, 直接.., 总之, 特殊处理一下.
         let mut tgt: Vec<u8> = vec![0_u8; (width * height) as usize * 4];
@@ -240,16 +254,17 @@ impl Image {
             }
         }
 
-        self.last_operation = Operation::GaussianBlur
+        // Miniaturize(and pixelate) will call gaussian_blur, but we don't want the last_op to be Gaussian
+        if is_standalone {
+            self.last_operation = Operation::GaussianBlur
+        }
     }
 
     // todo: factor the following 2 fn into one
     fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
-        log!("box blur v: w/h/radius: {:?}, {:?}, {:?}", width, height, radius);
+        // log!("box blur v: w/h/radius: {:?}, {:?}, {:?}", width, height, radius);
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
-        //let img_width = self.width;
-        //let img_height = self.height;
 
         let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         let mut box_sum = |row: u32, col: u32, start: i32, end: i32| {
@@ -259,7 +274,6 @@ impl Image {
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
-                // running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
             // let idx = (row * img_width + col) as usize;
@@ -267,7 +281,6 @@ impl Image {
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            //tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
@@ -281,8 +294,6 @@ impl Image {
     fn box_blur_h(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
-        //let img_width = self.width;
-        //let img_height = self.height;
 
         let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         let mut box_sum = |row, col, start: i32, end: i32| {
@@ -292,14 +303,12 @@ impl Image {
                 running_sum.0 += src[idx2 * 4 + 0] as u32;
                 running_sum.1 += src[idx2 * 4 + 1] as u32;
                 running_sum.2 += src[idx2 * 4 + 2] as u32;
-                //running_sum.3 += src[idx2 * 4 + 3] as u32;
             }
 
             let idx = (row * width + col) as usize;
             tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
             tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            //tgt[idx * 4 + 3] = (running_sum.3 as f64 * avg).min(255.0).round() as u8;
             running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
         };
 
