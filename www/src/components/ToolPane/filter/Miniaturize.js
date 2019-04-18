@@ -45,6 +45,11 @@ class Miniaturize extends Component {
     // then componentDidUpdate react to this store change by calling miniaturize().
     let top_height = this.props.heights.get('top');
     let bottom_height = this.props.heights.get('bottom');
+
+    if (top_height < 0 || top_height > this.props.imgHeight || bottom_height < 0 || bottom_height > this.props.imgHeight) {
+      return
+    }
+
     if (this.heights.top !== top_height) {
       this.heights.top = top_height;
       this.miniaturize(true)

@@ -152,7 +152,7 @@ impl Image {
             ratio_step = -1.0 / (gradient_height) as f64;
             gradient_range = (self.height - height)..(self.height - height + gradient_height);
         }
-        log!("gradient_height: {:?}, ratio_step: {:?}", gradient_height, ratio_step);
+        if height > img_height || height == 0 {return}
 
         for row in gradient_range {
             blur_ratio -= ratio_step;

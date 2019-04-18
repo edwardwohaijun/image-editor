@@ -36,7 +36,7 @@ class ZoomRatio extends Component {
   render() {
     // todo: on range slider, add a btn at '100%', sometimes, we just need the original size without zooming.
     return (
-        <div style={{display: 'flex', alignItems: 'center', position: 'relative', left: '256px'}}>
+        <div style={{display: 'flex', alignItems: 'center'}}>
 
           <button className='resize-view-btn fit-to-screen' onClick={this.setRatio}>
             <svg viewBox="-4 -4 22 22" width="22" height="22" fill='white' pointerEvents='none'>
