@@ -10,13 +10,17 @@ export default class BilateralFilter extends Component {
       sigma_domain: 3, // kernel width = sigma_domain * 2, 3 is default
       sigma_range: 5, // don't bother changing it, 5 is an optimal value, leave it here for testing.
       iter_count: 3,
+      running: true,
     };
     this.incr = 0; // when iter_count goes from 3 to 4(this.incr = 4 - 3), we pass 1 as iter_count to wasm.bilateral_filter()
     this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
   }
   // "radius = 8, iter_count > 4, sigma_range = 5" will generate good cartoonish feel.
 
-  componentDidMount = () => this.bf();
+  // this.bf() would take about 20s to finish, when you click to enter into this component,\
+  // page would hang with no response, after 20s, this component's DOM content would show up.
+  // setTimeout won't change anything, just show the DOM first, telling people, the page is still running.
+  componentDidMount = () => setTimeout(this.bf, 0);
   componentWillUnmount = () => {
     if (!this.changeApplied) {
       this.wasm_img.discard_change();
@@ -25,17 +29,24 @@ export default class BilateralFilter extends Component {
   };
 
   bf = () => {
-    // this.incr is for iter_count, but when user change sigma_domain, we should pass 'incr = false' to recreate img from scratch, \
-    // because the current img is based on old sigma_domain. To minimize the computation, just forget it.
-    let iter_count = this.state.iter_count;
-    let incr = false;
-    if (this.incr > 0) {
-      iter_count = this.incr;
-      incr = true;
-    }
-    // console.log("inside bf call, domain, range, iter_count, incr: ", this.state.sigma_domain, '/', this.state.sigma_range, '/', iter_count, '/', incr);
-    this.wasm_img.bilateral_filter(this.state.sigma_domain, this.state.sigma_range, iter_count, incr);
-    this.props.redraw();
+    // setState is async, when we set {running: true}, there is no immediate update on DOM, \
+    // and the following wasm_img.bilateral_filter() will block the whole bf().
+    // putting wasm_img.bilateral_filter in setTimeout could sidestep this problem: DOM update first, then wasm call.
+    this.setState({running: true});
+    setTimeout(() => {
+      // this.incr is for iter_count, but when user change sigma_domain, we should pass 'incr = false' to recreate img from scratch, \
+      // because the current img is based on old sigma_domain. To minimize the computation, just forget it.
+      let iter_count = this.state.iter_count;
+      let incr = false;
+      if (this.incr > 0) {
+        iter_count = this.incr;
+        incr = true;
+      }
+      this.wasm_img.bilateral_filter(this.state.sigma_domain, this.state.sigma_range, iter_count, incr);
+      this.props.redraw();
+      this.setState({running: false})
+    }, 0);
+
   };
 
   onChange = evt => {
@@ -76,7 +87,6 @@ export default class BilateralFilter extends Component {
 
     this.setState({[valueType]: value}, () => this.bf());
     this.changeApplied = false;
-    //console.log("valueType/value: ", valueType, '/', value);
   };
 
   onApply = () => {
@@ -88,6 +98,7 @@ export default class BilateralFilter extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
+          <div className='blinking-text' style={{visibility: this.state.running ? "visible" : "hidden"}}>Running</div>
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>

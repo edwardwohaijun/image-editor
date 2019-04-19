@@ -372,3 +372,16 @@ input[type=range]:focus::-ms-fill-lower {
 input[type=range]:focus::-ms-fill-upper {
     background: #ccc;
 }
+
+.blinking-text {
+    color: red;
+    font-size: 11px;
+    position: relative;
+    margin-top: -10px;
+    margin-bottom: 6px;
+    margin-left: 8px;
+    animation: blinker 1s linear infinite;
+}
+@keyframes blinker {
+    50% {opacity: 0;}
+}

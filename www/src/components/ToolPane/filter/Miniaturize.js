@@ -15,6 +15,7 @@ class Miniaturize extends Component {
       sigma: 5,
       // saturation: 0,
       // brightness: 0,
+      running: true,
     };
     this.heights = {top: 0, bottom: 0};
     this.topOrBottom = "both";
@@ -22,26 +23,31 @@ class Miniaturize extends Component {
   }
 
   miniaturize = () => {
-    let sigma = this.state.sigma;
-    let top, bottom;
-    ({top, bottom} = this.heights);
+    this.setState({running: true});
+    setTimeout(() => {
+      let sigma = this.state.sigma;
+      let top, bottom;
+      ({top, bottom} = this.heights);
 
-    switch (this.topOrBottom) {
-      case "both": {
-        this.wasm_img.miniaturize(sigma, top, true);
-        this.wasm_img.miniaturize(sigma, bottom, false);
-        break;
+      switch (this.topOrBottom) {
+        case "both": {
+          this.wasm_img.miniaturize(sigma, top, true);
+          this.wasm_img.miniaturize(sigma, bottom, false);
+          break;
+        }
+        case "top": {
+          this.wasm_img.miniaturize(sigma, top, true);
+          break
+        }
+        case "bottom": {
+          this.wasm_img.miniaturize(sigma, bottom, false);
+          break
+        }
       }
-      case "top": {
-        this.wasm_img.miniaturize(sigma, top, true);
-        break
-      }
-      case "bottom": {
-        this.wasm_img.miniaturize(sigma, bottom, false);
-        break
-      }
-    }
-    this.props.redraw();
+      this.props.redraw();
+      this.setState({running: false})
+    }, 0);
+
   };
 
   componentDidMount = () => this.props.showHandler(true);
@@ -63,8 +69,18 @@ class Miniaturize extends Component {
       return
     }
 
-    // the following 2 if are not exclusive, \
-    // when component get loaded, both top and bottom height need to be blurred.
+    // if this.miniaturize() is not running in setTimeout, the first miniaturize() call will block the second, \
+    // which is the case when component get mounted, both calls will run to completion, \
+    // but now miniaturize() is async, I don't know how Rust handle this, but it looks like the first call is not running, \
+    // so, I have to make it explicit.
+    if (this.heights.top !== top_height && this.heights.bottom !== bottom_height) {
+      this.topOrBottom = "both";
+      this.heights.top = top_height;
+      this.heights.bottom = bottom_height;
+      this.miniaturize();
+      return
+    }
+
     if (this.heights.top !== top_height) {
       this.topOrBottom = "top";
       this.heights.top = top_height;
@@ -130,6 +146,7 @@ class Miniaturize extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
+          <div className='blinking-text' style={{visibility: this.state.running ? "visible" : "hidden"}}>Running</div>
           <div style={{display: 'flex', alignItems: 'center', marginBottom: '18px'}}>
             <button className={'resize-view-btn btn-plus-minus'} data-value-change="down" onClick={this.onChange}>
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>

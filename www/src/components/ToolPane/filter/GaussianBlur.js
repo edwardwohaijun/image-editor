@@ -8,12 +8,13 @@ export default class GaussianBlur extends Component {
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
       radius: 5, // [1, 11, 2], [min, max, step]
+      running: true,
     };
     this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
   }
 
   // componentDidMount = () => this.blurTest();
-  componentDidMount = () => this.blur();
+  componentDidMount = () => setTimeout(this.blur, 0);
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {
@@ -22,14 +23,13 @@ export default class GaussianBlur extends Component {
     }
   };
 
-  blurTest = () => {
-    this.wasm_img.blur_test(this.state.radius);
-    this.props.redraw();
-  };
-
   blur = () => {
-    this.wasm_img.blur(this.state.radius);
-    this.props.redraw();
+    this.setState({running: true});
+    setTimeout(() => {
+      this.wasm_img.blur(this.state.radius);
+      this.props.redraw();
+      this.setState({running: false})
+    }, 0);
   };
 
   onChange = evt => {
@@ -71,6 +71,7 @@ export default class GaussianBlur extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
+          <div className='blinking-text' style={{visibility: this.state.running ? "visible" : "hidden"}}>Running</div>
           <div style={{marginBottom: '24px'}}>
             <div style={{paddingLeft: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
               <div>Gaussian Blur</div>

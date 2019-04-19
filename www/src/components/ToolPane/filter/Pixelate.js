@@ -13,6 +13,7 @@ class Pixelate extends Component {
       blockSize: 7, // min: 3, max: 11, step: 2
       handlerVisible: true,
       blurType: "mosaic", // or "gaussian"
+      running: true,
     };
     this.region = {
       x: 0, y: 0, width: 0, height: 0,
@@ -21,31 +22,34 @@ class Pixelate extends Component {
   }
 
   pixelate = () => {
-    // validity check.
-    // x/y/w/h are rounded before passed from PixelateHandlers, it's possible: x + width > imgWidth
-    let {x, y, width, height} = this.region;
-    let {blockSize, blurType} = this.state;
-    let imgWidth = this.props.imgWidth;
-    let imgHeight = this.props.imgHeight;
-    x = Math.min(Math.max(x, 0), imgWidth - 1);
-    y = Math.min(Math.max(y, 0), imgHeight - 1);
-    width = Math.min(Math.max(width, 1), imgWidth);
-    height = Math.min(Math.max(height, 1), imgHeight);
+    this.setState({running: true});
+    setTimeout(() => {
+      // validity check.
+      // x/y/w/h are rounded before passed from PixelateHandlers, it's possible: x + width > imgWidth
+      let {x, y, width, height} = this.region;
+      let {blockSize, blurType} = this.state;
+      let imgWidth = this.props.imgWidth;
+      let imgHeight = this.props.imgHeight;
+      x = Math.min(Math.max(x, 0), imgWidth - 1);
+      y = Math.min(Math.max(y, 0), imgHeight - 1);
+      width = Math.min(Math.max(width, 1), imgWidth);
+      height = Math.min(Math.max(height, 1), imgHeight);
 
-    if (x + width > imgWidth) {
-      width -= x + width - imgWidth // In theory, it's still possible after subtract, width became negative, \
-    } // but, not in practice, width/height has minimum value(20px), and the diff between 'x+width' and imgWidth is just 1px because of rounding
+      if (x + width > imgWidth) {
+        width -= x + width - imgWidth // In theory, it's still possible after subtract, width became negative, \
+      } // but, not in practice, width/height has minimum value(20px), and the diff between 'x+width' and imgWidth is just 1px because of rounding
 
-    if (y + height > imgHeight) {
-      height -= y + height - imgHeight
-    }
+      if (y + height > imgHeight) {
+        height -= y + height - imgHeight
+      }
 
-    this.wasm_img.pixelate(x, y, width, height, blockSize, blurType);
-    this.props.redraw();
+      this.wasm_img.pixelate(x, y, width, height, blockSize, blurType);
+      this.props.redraw();
+      this.setState({running: false})
+    }, 0);
   };
 
   componentDidMount = () => this.props.showHandler(true);
-
   componentWillUnmount = () => {
     this.props.showHandler(false);
     if (!this.changeApplied) {
@@ -133,7 +137,7 @@ class Pixelate extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-
+          <div className='blinking-text' style={{visibility: this.state.running ? "visible" : "hidden"}}>Running</div>
           <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
             <div>Mosaic</div>
               <div>
