@@ -14,7 +14,6 @@ class ToolPane extends Component {
   }
 
   componentDidMount = () => { };
-
   componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.selectedTool) { // restoring the img should move toolPropsList back to original position.
       this.toolPropsList.style.transform = 'translate(0px, 0px)'
@@ -33,14 +32,13 @@ class ToolPane extends Component {
   };
 
   render() {
+    // -56px: the width of vertical toolbar on the left
     return (
         <div style={{display: 'flex', height: 'calc(100vh - 56px)'}}>
           <div ref={div => this.toolPropsList = div} id='tool-prop-list'
                style={{width: '256px', height: '100%', position: 'absolute', backgroundColor: '#2d2e37', left: '-200px', zIndex: 5}}>
             <ToolPropList selectedTool={this.props.selectedTool} close={this.onSelectTool} zoomRatio={this.props.zoomRatio}/>
-            {/*
-            passing null(or passing nothing) close the ToolPropList pane, passing toolID open its propList pane
-            */}
+            {/* passing null(or passing nothing) close the ToolPropList pane, passing toolID open its propList pane */}
           </div>
           <ul style={{width: "56px", height: "100%", listStyleType: 'none', padding: '0', backgroundColor: '#3f414c', marginTop: 0, zIndex: 10}}>
             <ToolIcon id='tool-basic' iconID='basic' onClick={this.onSelectTool} selected={this.props.selectedTool === 'tool-basic'}/>

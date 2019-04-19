@@ -40,7 +40,7 @@ class Main extends Component {
     let canvas = document.getElementById('canvas');
     let container = document.getElementById('canvas-container');
 
-    let containerWidth = container.offsetWidth - 256;  // clientWidth; todo: what if offsetWidth <= 256?????????????
+    let containerWidth = container.offsetWidth;
     let containerHeight = container.offsetHeight;// clientHeight;
     let zoomRatio = 1.0;
     if (!autoFit) { // users manually zoom-in/out canvas

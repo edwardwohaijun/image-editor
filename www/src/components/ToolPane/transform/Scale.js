@@ -5,7 +5,7 @@ import {setWidthHeight} from "../../../actions";
 import {bindActionCreators} from "redux";
 import {connect} from "react-redux";
 
-// todo: to allow to scale up
+// todo: to allow to scale up, and use ctx.scale instead of wasm
 class Scale extends Component {
   constructor(props) {
     super(props);

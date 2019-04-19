@@ -66,9 +66,7 @@ impl Image {
                     block_avg = block_position.iter().fold(0_u32, |sum, (x,y)| -> u32 {
                         self.pixels_bk[ (*y * img_width as usize + *x) * 4 + offset ] as u32 + sum
                     });
-
                     block_avg = (block_avg as f64 / (block_size * block_size) as f64).round() as u32;
-
                     for (x, y) in block_position.iter() {
                         self.pixels[ (*y * img_width as usize + *x) * 4 + offset] = block_avg as u8;
                     }
@@ -85,7 +83,8 @@ impl Image {
         let img_width = self.width;
         let img_height = self.height;
 
-        // I have made Operation enum Copy/Clone, otherwise, you can't move self.last_operation
+        // I have made Operation enum Copy/Clone, otherwise, you can't move self.last_operation,\
+        // making a ref doesn't work either, because inside match, restore closure will borrow mutably from self.
         let last_op = self.last_operation;
         let mut restore = |x, y, w, h| {
             let mut idx: usize;
@@ -120,6 +119,43 @@ impl Image {
                 restore(top_x, top_y, width, height)
             }
             _ => {return;}
+        }
+    }
+
+    // after applying miniaturizing, there is a noticeable line between blurred and unblurred part,\
+    // the following failed attempt tries to smoothen out the line.
+    pub fn blur_test(&mut self, sigma: f64) {
+        let img_width = self.width;
+        let img_height = self.height;
+
+        let mut mask_src = vec![0_u8; (img_width * img_height) as usize];
+        let start_height = (img_height as f64 / 3.0).round() as u32;
+        let end_height = (img_height as f64 * 2.0 / 3.0).round() as u32;
+        for row in start_height..end_height {
+            for col in 0..img_width {
+                let idx = (row * img_width + col) as usize;
+                mask_src[idx] = 255;
+            }
+        }
+
+        let mut mask_tgt = vec![0_u8; (img_width * img_height) as usize];
+        let num_pass = 3; // 3 passes is a good balance between Gaussian approximation and computation
+        let box_size = self.box_for_gaussian(sigma, num_pass);
+
+        for idx in 0..num_pass {
+            self.box_blur_h(&mask_src, &mut mask_tgt, img_width, img_height, box_size[idx as usize] / 2);
+            self.box_blur_v(&mask_tgt, &mut mask_src, img_width, img_height,box_size[idx as usize] / 2);
+        }
+
+        self.blur(sigma);
+        for row in 0..img_height {
+            for col in 0..img_width {
+                let idx = (row * img_width + col) as usize;
+                let blur_ratio = mask_src[idx] as f64 / 255.0;
+                self.pixels[idx * 4 + 0] = (self.pixels_bk[idx * 4 + 0] as f64 * blur_ratio + self.pixels[idx * 4 + 0] as f64 * (1.0 - blur_ratio)).round() as u8;
+                self.pixels[idx * 4 + 1] = (self.pixels_bk[idx * 4 + 1] as f64 * blur_ratio + self.pixels[idx * 4 + 1] as f64 * (1.0 - blur_ratio)).round() as u8;
+                self.pixels[idx * 4 + 2] = (self.pixels_bk[idx * 4 + 2] as f64 * blur_ratio + self.pixels[idx * 4 + 2] as f64 * (1.0 - blur_ratio)).round() as u8;
+            }
         }
     }
 
@@ -192,7 +228,7 @@ impl Image {
     // Some code are just shamelessly copied from the following:
     // https://medium.com/@RoardiLeone/fast-image-blurring-algorithm-photoshop-level-w-c-code-87516d5cee87
     // http://blog.ivank.net/fastest-gaussian-blur.html
-    fn gaussian_blur(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32, is_standalone: bool) {
+    pub fn gaussian_blur(&mut self, sigma: f64, top_x: i32, top_y: i32, width: u32, height: u32, is_standalone: bool) {
         let mut top_x = top_x.max(0).min(self.width_bk as i32);
         let mut top_y = top_y.max(0).min(self.height_bk as i32);
         let mut width = width.min(self.width_bk);
@@ -252,28 +288,28 @@ impl Image {
         }
     }
 
-    // todo: factor the following 2 fn into one
+    // todo: factor the following 2 fn into one, and since they have nothing to do with self, move it into utils mod.
     fn box_blur_v(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
-        // log!("box blur v: w/h/radius: {:?}, {:?}, {:?}", width, height, radius);
+        let channel_count = (src.len() as f64 / (width * height) as f64) as u32;
+        let channel_count = if channel_count >= 3 {4} else {1};
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
 
-        let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        let mut running_sum = vec![0_u32; channel_count as usize];
         let mut box_sum = |row: u32, col: u32, start: i32, end: i32| {
             for idx in 0..(radius * 2 + 1) {
                 let row = cmp::min(cmp::max(start + idx as i32, 0), height as i32 - 1) as u32;
                 let idx2 = (row * width) as usize + col as usize;
-                running_sum.0 += src[idx2 * 4 + 0] as u32;
-                running_sum.1 += src[idx2 * 4 + 1] as u32;
-                running_sum.2 += src[idx2 * 4 + 2] as u32;
+                for c in 0..channel_count {
+                    running_sum[c] += src[idx2 * channel_count + c] as u32;
+                }
             }
 
-            // let idx = (row * img_width + col) as usize;
             let idx = (row * width + col) as usize;
-            tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+            for c in 0..channel_count {
+                tgt[idx * channel_count + c] = (running_sum[c] as f64 * avg).min(255.0).round() as u8;
+                running_sum[c] = 0;
+            }
         };
 
         for col in 0..width {
@@ -284,24 +320,26 @@ impl Image {
     }
 
     fn box_blur_h(&mut self, src: &[u8], tgt: &mut [u8], width: u32, height: u32, radius: u32) {
+        let channel_count = (src.len() as f64 / (width * height) as f64) as u32;
+        let channel_count = if channel_count >= 3 {4} else {1};
         let radius = if radius % 2 == 0 {radius + 1} else {radius};
         let avg = 1.0 / (radius * 2 + 1) as f64;
 
-        let mut running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+        let mut running_sum = vec![0_u32; channel_count as usize];
         let mut box_sum = |row, col, start: i32, end: i32| {
             for idx in 0..(radius * 2 + 1) {
                 let col = cmp::min(cmp::max(start + idx as i32, 0), width as i32 - 1);
                 let idx2 = (row * width) as usize + col as usize;
-                running_sum.0 += src[idx2 * 4 + 0] as u32;
-                running_sum.1 += src[idx2 * 4 + 1] as u32;
-                running_sum.2 += src[idx2 * 4 + 2] as u32;
+                for c in 0..channel_count {
+                    running_sum[c] += src[idx2 * channel_count + c] as u32;
+                }
             }
 
             let idx = (row * width + col) as usize;
-            tgt[idx * 4 + 0] = (running_sum.0 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 1] = (running_sum.1 as f64 * avg).min(255.0).round() as u8;
-            tgt[idx * 4 + 2] = (running_sum.2 as f64 * avg).min(255.0).round() as u8;
-            running_sum = (0_u32, 0_u32, 0_u32, 0_u32);
+            for c in 0..channel_count {
+                tgt[idx * channel_count + c] = (running_sum[c] as f64 * avg).min(255.0).round() as u8;
+                running_sum[c]= 0;
+            }
         };
 
         for row in 0..height {
@@ -377,8 +415,7 @@ impl Image {
 
     // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the whole procedure, \
     // how about downsampling the image to 1/4, doing BF, and other steps, then at the last step, upsampling to original size,\
-    // cartoonifying will definitely quantize color, lose many details, ....
-
+    // cartoonifying need to quantize color, lose many details, ....
     pub fn cartoonify(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
         self.bilateral_filter(radius, sigma_r, iter_count, incr);
 
@@ -520,24 +557,6 @@ impl Image {
         }
     }
 
-    /*
-    fn edge_detect(&mut self) {
-        let w = self.width;
-        let h = self.height;
-        let img_size = w * h;
-
-        let gray_pixels = (0..img_size).into_iter().map(|idx|
-            (self.pixels[idx as usize * 4 + 0] as f64 * 0.2989
-                + self.pixels[idx as usize * 4 + 1] as f64 * 0.5870
-                + self.pixels[idx as usize * 4 + 2] as f64 * 0.1140).round() as u8
-        ).collect::<Vec<_>>(); // 255.0 * 0.2989 + 255.0 * 0.5870 + 255.0 * 0.1140 = 254.9744999, so, no need to do .max(255.0) clamp
-
-        let mag_x = vec![0_f32; img_size];
-        let mag_y = vec![0_f32; img_size];
-        let direction = vec![0_f32; img_size];
-    }
-    */
-
     pub fn bilateral_filter(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) {
         // todo: add validity check, every arguments should have a range
         // when iter_count goes from 3 to 4(incr == true), we just need to run 1 more iteration(not 4) by reusing self.pixels()), \
@@ -555,14 +574,13 @@ impl Image {
         // if iter_count is odd, it looks like self.pixels should get assigned "tgt",\
         // but since there is a "std::mem::swap" at the end of for-loop iteration, so "src" should be assigned instead.
         self.pixels = if iter_count % 2 == 0 {tgt} else {src};
-        self.last_operation = Operation::BilateralFilter
+        self.last_operation = Operation::BilateralFilter // in JS, we call this operation SMOOTHEN
     }
 
     // small radius with more iter_count yielded results that are more aesthetically pleasing, \
     // and faster than larger radius with less iter_count.
     fn iterative_bf(&mut self, src: &[u8], tgt: &mut [u8], radius: u32, sigma_r: f64) {
         let sigma_d = radius as f64 / 2.0; // domain filter
-        // let sigma_d = 0.84089642;
         let gaussian = |x: i32, y: i32| {
             // https://en.wikipedia.org/wiki/Gaussian_blur
             let a = -0.5 * ((x * x) as f64  + (y * y) as f64) / (sigma_d * sigma_d);
