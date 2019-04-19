@@ -12,7 +12,7 @@ export default class GaussianBlur extends Component {
     this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
   }
 
-  //componentDidMount = () => this.blurTest();
+  // componentDidMount = () => this.blurTest();
   componentDidMount = () => this.blur();
 
   componentWillUnmount = () => {

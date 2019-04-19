@@ -92,6 +92,16 @@ class Miniaturize extends Component {
           </div>
 
           <ApplyButton onApply={this.onApply}/>
+
+          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
+            This filter make subject look like a miniature-scale model. To have the best effect, the image should exhibit the following characteristics:
+          </p>
+          <ul>
+            <li>The photo must be taken from above, but not directly overhead.</li>
+            <li>A simple scene is usually better than a complicated one.</li>
+            <li>Photo sharpness is a must, as well as good lighting.</li>
+            <li>If people are in the scene, they need to be fairly obscure and small.</li>
+          </ul>
         </div>
     )}
 }

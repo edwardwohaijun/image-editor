@@ -48,16 +48,8 @@ export default class Cartoonify extends Component {
           <ApplyButton onApply={this.onApply}/>
 
           <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
-            需要提示: the bigger your image, the bigger the stdDev
-            Cartoonify is implemented by taking the following steps:
-            You can open your computer camera, take a shoot, and apply this filter. (我要先自己试试, 看看效果, 可能有必要再apply一个median filter, 用来remove noise)
-            先看看效果, 再决定是否apply median filter. 我可以拍个自己的cartoonify, 放在github, v2推广上. 效果模糊些, 给他人做个example.
-            note: Bilateral filtering is computationally expensive, there are many optimization, but ....
+            note: the bigger your image, the bigger the stdDev should be.
           </p>
-          <ul>
-              <li>Bilateral filter: to, and it also help quantizing color</li>
-              <li></li>
-            </ul>
         </div>
     )}
 }

@@ -143,8 +143,16 @@ export default class BilateralFilter extends Component {
           <ApplyButton onApply={this.onApply}/>
 
           <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
-            Bilateral filter is a edge-preserving blurring filter, it's mostly used to remove noise.
-            Open 'EddieRedmayne' img, apply this filter, see the result with your own eyes.
+            This is an edge-preserving blurring filter, mostly used to remove noise.
+            Open the following 2 images of celebrities with some freckles, and see the filtering result.
+          </p>
+          <ul>
+            <li>Eddie Redmayne</li>
+            <li>Emma Stone</li>
+          </ul>
+          <p>
+            when the above 2 sliders approach max value(takes long time to finish), this filter will generate cartoonish feel.
+            You can open your computer camera, take a selfie, and apply this filter.
           </p>
         </div>
     )}

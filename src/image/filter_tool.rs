@@ -124,6 +124,7 @@ impl Image {
 
     // after applying miniaturizing, there is a noticeable line between blurred and unblurred part,\
     // the following failed attempt tries to smoothen out the line.
+    /*
     pub fn blur_test(&mut self, sigma: f64) {
         let img_width = self.width;
         let img_height = self.height;
@@ -139,8 +140,8 @@ impl Image {
         }
 
         let mut mask_tgt = vec![0_u8; (img_width * img_height) as usize];
-        let num_pass = 3; // 3 passes is a good balance between Gaussian approximation and computation
-        let box_size = self.box_for_gaussian(sigma, num_pass);
+        let num_pass = 5; // 3 passes is a good balance between Gaussian approximation and computation
+        let box_size = self.box_for_gaussian(sigma * 3.5, num_pass);
 
         for idx in 0..num_pass {
             self.box_blur_h(&mask_src, &mut mask_tgt, img_width, img_height, box_size[idx as usize] / 2);
@@ -155,9 +156,11 @@ impl Image {
                 self.pixels[idx * 4 + 0] = (self.pixels_bk[idx * 4 + 0] as f64 * blur_ratio + self.pixels[idx * 4 + 0] as f64 * (1.0 - blur_ratio)).round() as u8;
                 self.pixels[idx * 4 + 1] = (self.pixels_bk[idx * 4 + 1] as f64 * blur_ratio + self.pixels[idx * 4 + 1] as f64 * (1.0 - blur_ratio)).round() as u8;
                 self.pixels[idx * 4 + 2] = (self.pixels_bk[idx * 4 + 2] as f64 * blur_ratio + self.pixels[idx * 4 + 2] as f64 * (1.0 - blur_ratio)).round() as u8;
+                self.pixels[idx * 4 + 3] = (self.pixels_bk[idx * 4 + 3] as f64 * blur_ratio + self.pixels[idx * 4 + 3] as f64 * (1.0 - blur_ratio)).round() as u8;
             }
         }
     }
+    */
 
     pub fn miniaturize(&mut self, sigma: f64, height: u32, is_top: bool) {
         let top_x = 0;
@@ -165,6 +168,7 @@ impl Image {
 
         let img_width = self.width;
         let img_height = self.height;
+        if height > img_height || height == 0 {return}
 
         self.restore_area(is_top);
         self.gaussian_blur(sigma, top_x as i32, top_y as i32, img_width, height, false);
@@ -174,19 +178,17 @@ impl Image {
         // but the final result is not satisfactory, subtle noticeable border still exits, leave it to future improvement
         let gradient_height = (height as f64 * 0.20) as u32;
         let mut blur_ratio;
-        let ratio_step;
+        let mut ratio_step= 1.0 / gradient_height as f64;
         let gradient_range;
 
         if is_top {
             blur_ratio = 1.0;
-            ratio_step = 1.0 / (gradient_height) as f64;
             gradient_range = (height - gradient_height)..height;
         } else {
             blur_ratio = 0.0;
-            ratio_step = -1.0 / (gradient_height) as f64;
+            ratio_step *= -1.0;
             gradient_range = (self.height - height)..(self.height - height + gradient_height);
         }
-        if height > img_height || height == 0 {return}
 
         for row in gradient_range {
             blur_ratio -= ratio_step;
@@ -221,7 +223,7 @@ impl Image {
     // this is a wrapper around gaussian_blur(), used for whole img blurring
     pub fn blur(&mut self, sigma: f64) {
         let (top_x, top_y, width, height, is_standalone) = (0, 0, self.width, self.height, true);
-        self.gaussian_blur(sigma, top_x, top_y, width, height, true)
+        self.gaussian_blur(sigma, top_x, top_y, width, height, is_standalone)
     }
 
     // This is the approximation of Gaussian Blur, but faster.
@@ -416,6 +418,7 @@ impl Image {
     // Cartoonify need bilateral filter, whose naive impl is too expensive, but bilateral is just one of the whole procedure, \
     // how about downsampling the image to 1/4, doing BF, and other steps, then at the last step, upsampling to original size,\
     // cartoonifying need to quantize color, lose many details, ....
+    /*
     pub fn cartoonify(&mut self, radius: u32, sigma_r: f64, iter_count: u32, incr: bool) { // radius: [1, 9, 1], use mnemonic name, like: range_sigma
         self.bilateral_filter(radius, sigma_r, iter_count, incr);
 
@@ -424,6 +427,7 @@ impl Image {
         // enhance edge
         self.last_operation = Operation::Cartoonify
     }
+    */
 
 
     // Median filtering is implemented using:
