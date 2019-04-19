@@ -11,27 +11,40 @@ class Miniaturize extends Component {
     this.wasm_img = imgObj.get_wasm_img();
     this.state = {
       handlerVisible: true,
-      blurRadius: 15, // [10, 20, 2]
+      // blurRadius: 15, // [10, 20, 2]
       sigma: 5,
-      saturation: 0,
-      brightness: 0,
+      // saturation: 0,
+      // brightness: 0,
     };
     this.heights = {top: 0, bottom: 0};
+    this.topOrBottom = "both";
     this.changeApplied = false;
   }
 
-  miniaturize = is_top => {
-    // todo: validity check, make sure this.heights doesn't exceed boundaries.
-    if (is_top) { // todo: make sigma an argument, let users slide to change its value.
-      this.wasm_img.miniaturize(9, this.heights.top, is_top);
-    } else {
-      this.wasm_img.miniaturize(9, this.heights.bottom, is_top);
+  miniaturize = () => {
+    let sigma = this.state.sigma;
+    let top, bottom;
+    ({top, bottom} = this.heights);
+
+    switch (this.topOrBottom) {
+      case "both": {
+        this.wasm_img.miniaturize(sigma, top, true);
+        this.wasm_img.miniaturize(sigma, bottom, false);
+        break;
+      }
+      case "top": {
+        this.wasm_img.miniaturize(sigma, top, true);
+        break
+      }
+      case "bottom": {
+        this.wasm_img.miniaturize(sigma, bottom, false);
+        break
+      }
     }
     this.props.redraw();
   };
 
   componentDidMount = () => this.props.showHandler(true);
-
   componentWillUnmount = () => {
     this.props.showHandler(false);
     if (!this.changeApplied) {
@@ -50,15 +63,53 @@ class Miniaturize extends Component {
       return
     }
 
+    // the following 2 if are not exclusive, \
+    // when component get loaded, both top and bottom height need to be blurred.
     if (this.heights.top !== top_height) {
+      this.topOrBottom = "top";
       this.heights.top = top_height;
-      this.miniaturize(true)
+      this.miniaturize()
     }
+
     if (this.heights.bottom !== bottom_height) {
+      this.topOrBottom = "bottom";
       this.heights.bottom = bottom_height;
-      this.miniaturize(false)
+      this.miniaturize()
     }
+
     this.changeApplied = false;
+  };
+
+
+  onChange = evt => {
+    let tgt = evt.target;
+    let changeManner = tgt.dataset.valueChange;
+    let sigma;
+    switch (changeManner) {
+      case 'up': {
+        sigma = Math.min(this.state.sigma + 2, 11);
+        break;
+      }
+      case 'down': {
+        sigma = Math.max(this.state.sigma - 2, 3);
+        break;
+      }
+      case 'set': {
+        sigma = parseInt(tgt.value);
+        break;
+      }
+      default: return
+    }
+
+    if (sigma === this.state.sigma) {
+      return
+    }
+
+    this.setState({sigma}, () => {
+      this.changeApplied = false;
+      this.topOrBottom = "both";
+      this.miniaturize()
+    });
   };
 
   onApply = () => {
@@ -79,9 +130,22 @@ class Miniaturize extends Component {
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
-          Miniaturize
-          Please use an image with a top-down view
-          {/* todo: add a contrast/brightness slider  */}
+          <div style={{display: 'flex', alignItems: 'center', marginBottom: '18px'}}>
+            <button className={'resize-view-btn btn-plus-minus'} data-value-change="down" onClick={this.onChange}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>
+                <path stroke="#525562" d="M9 0a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 17.36A8.34 8.34 0 1 1 17.36 9 8.35 8.35 0 0 1 9 17.36z"/>
+                <path d="M13.54 8.68h-9a.35.35 0 0 0 0 .69h9a.35.35 0 1 0 0-.69z"/>
+              </svg>
+            </button>
+            <input type='range' data-value-change="set" min='3' max='11' step='2' value={this.state.sigma} onChange={this.onChange} />
+            <button className={'resize-view-btn btn-plus-minus'} data-value-change="up" onClick={this.onChange}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="white" viewBox="-1 -2 23 23" pointerEvents='none'>
+                <path stroke="#525562" d="M10.39 0a10.39 10.39 0 1 0 10.38 10.39A10.4 10.4 0 0 0 10.39 0zm0 20A9.59 9.59 0 1 1 20 10.39 9.6 9.6 0 0 1 10.39 20z"/>
+                <path d="M15.38 10h-4.59V5.59a.4.4 0 0 0-.8 0V10h-4.6a.4.4 0 1 0 0 .8H10v4.79a.4.4 0 0 0 .8 0v-4.8h4.59a.4.4 0 1 0 0-.8z"/>
+              </svg>
+            </button>
+          </div>
+
           <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
             <div>Show handler</div>
             <div>
@@ -94,9 +158,10 @@ class Miniaturize extends Component {
           <ApplyButton onApply={this.onApply}/>
 
           <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
-            This filter make subject look like a miniature-scale model. To have the best effect, the image should exhibit the following characteristics:
+            This filter make subject look like a miniature-scale model.
+            To achive the best effect, the image is better to exhibit the following characteristics:
           </p>
-          <ul>
+          <ul style={{fontSize: '12px', paddingLeft: '12px'}}>
             <li>The photo must be taken from above, but not directly overhead.</li>
             <li>A simple scene is usually better than a complicated one.</li>
             <li>Photo sharpness is a must, as well as good lighting.</li>
