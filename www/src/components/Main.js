@@ -148,14 +148,11 @@ class Main extends Component {
     imgObj.imgBuff = img;
     let wasm_img = imgObj.get_wasm_img();
 
-    //wasm_img.reuse(w, h, new Uint8Array(2)); // resizeCanvas call need width/height in wasm_img, but the img data(3rd arg) is not ready, just pass a dummy data to it.
-
-    // this.resizeCanvas(true); // this must be called when wasm_img is ready.
-    // but, since we save w/h in redux, can resizeCanvas read w/h in redux rather than wasm_img, this could remove the above .reuse() call
-    // todo, test above assert
-
+    // at the end of this fn, there is a resizeCanvas() call, which will set canvasWidth/Height, which will make the canvas black.
+    // In other word, setting canvasWidth/Height must be followed by drawImage(),
+    // so I have to schedule the drawImage() to run after resizeCanvas() by using dirty, hacky setTimeout.
     let canvas = document.getElementById('canvas');
-    canvas.getContext('2d').drawImage(img, 0, 0);
+    setTimeout(() => canvas.getContext('2d').drawImage(img, 0, 0), 0);
 
     // ImageData in above canvas is ratio applied(the above resizeCanvas() will change canvas.width/height ), thus, can't feed this imageData into wasm
     // I have to create another tmp canvas to get the original imgData
