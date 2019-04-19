@@ -146,11 +146,11 @@ export default class BilateralFilter extends Component {
             This is an edge-preserving blurring filter, mostly used to remove noise.
             Open the following 2 images of celebrities with some freckles, and see the filtering result.
           </p>
-          <ul>
+          <ul style={{fontSize: '12px', paddingLeft: '12px'}}>
             <li>Eddie Redmayne</li>
             <li>Emma Stone</li>
           </ul>
-          <p>
+          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
             when the above 2 sliders approach max value(takes long time to finish), this filter will generate cartoonish feel.
             You can open your computer camera, take a selfie, and apply this filter.
           </p>

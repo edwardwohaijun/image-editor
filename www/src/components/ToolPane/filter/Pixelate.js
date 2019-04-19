@@ -12,6 +12,7 @@ class Pixelate extends Component {
     this.state = {
       blockSize: 7, // min: 3, max: 11, step: 2
       handlerVisible: true,
+      blurType: "mosaic", // or "gaussian"
     };
     this.region = {
       x: 0, y: 0, width: 0, height: 0,
@@ -23,6 +24,7 @@ class Pixelate extends Component {
     // validity check.
     // x/y/w/h are rounded before passed from PixelateHandlers, it's possible: x + width > imgWidth
     let {x, y, width, height} = this.region;
+    let {blockSize, blurType} = this.state;
     let imgWidth = this.props.imgWidth;
     let imgHeight = this.props.imgHeight;
     x = Math.min(Math.max(x, 0), imgWidth - 1);
@@ -38,7 +40,7 @@ class Pixelate extends Component {
       height -= y + height - imgHeight
     }
 
-    this.wasm_img.pixelate(x, y, width, height, this.state.blockSize);
+    this.wasm_img.pixelate(x, y, width, height, blockSize, blurType);
     this.props.redraw();
   };
 
@@ -72,28 +74,40 @@ class Pixelate extends Component {
   onChange = evt => {
     let tgt = evt.target;
     let changeManner = tgt.dataset.valueChange;
-    let blockSize;
+    let blockSize = this.state.blockSize;
+    let blurType = this.state.blurType;
+
     switch (changeManner) {
       case 'up': {
-        blockSize = Math.min(this.state.blockSize + 2, 11);
+        blockSize = Math.min(blockSize + 2, 11);
         break;
       }
       case 'down': {
-        blockSize = Math.max(this.state.blockSize - 2, 3);
+        blockSize = Math.max(blockSize - 2, 3);
         break;
       }
       case 'set': {
         blockSize = parseInt(tgt.value);
         break;
       }
+      case 'blurType': {
+        if (tgt.id === "pixelate-by-mosaic") {
+          blurType = "mosaic"
+        } else if (tgt.id === "pixelate-by-gaussian") {
+          blurType = "gaussian"
+        } else {
+          return
+        }
+        break;
+      }
       default: return
     }
 
-    if (blockSize === this.state.blockSize) {
+    if (blockSize === this.state.blockSize && blurType === this.state.blurType) {
       return
     }
 
-    this.setState({blockSize}, () => {
+    this.setState({blockSize, blurType}, () => {
       this.changeApplied = false;
       this.pixelate()
     });
@@ -102,7 +116,8 @@ class Pixelate extends Component {
   onApply = () => {
     this.changeApplied = true; // this is not necessary, this component is about to be unmounted.
     this.wasm_img.apply_change();
-    this.wasm_img.rgb_to_hsi(); // Pixelate is performed on RBG, not HSI, we need to regenerate HSI based on new RGB
+    this.wasm_img.rgb_to_hsi(); // Pixelate is performed on RBG, not HSI, we need to regenerate HSI based on new RGB????????????????????????
+    // todo: can we move this into Rust's last op,
     this.props.onSelectTool(''); // to unmount myself.
   };
 
@@ -119,7 +134,24 @@ class Pixelate extends Component {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
 
-          {/* todo: add another option: use Gaussian blur to fill the selected region */}
+          <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
+            <div>Mosaic</div>
+              <div>
+                <input type="radio" id="pixelate-by-mosaic" checked={this.state.blurType === 'mosaic'} data-value-change="blurType"
+                       value={this.state.blurType} name='pixelate-by-mosaic' className='radio-input' style={{display:'none'}} onChange={this.onChange} />
+                <label htmlFor="pixelate-by-mosaic" className="radio-label"><span /></label>
+              </div>
+            </div>
+
+            <div className='toggle-btn-wrapper' style={{paddingLeft: '8px', paddingRight: '8px'}}>
+              <div>Blur</div>
+              <div>
+                <input type="radio" id="pixelate-by-gaussian" checked={this.state.blurType === 'gaussian'} data-value-change="blurType"
+                       value={this.state.blurType} name='pixelate-by-gaussian' className='radio-input' style={{display:'none'}} onChange={this.onChange} />
+                <label htmlFor="pixelate-by-gaussian" className="radio-label"><span /></label>
+              </div>
+            </div>
+
           <div style={{display: 'flex', alignItems: 'center', marginBottom: '18px'}}>
             <button className={'resize-view-btn btn-plus-minus'} data-value-change="down" onClick={this.onChange}>
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="-3 -3 22 22" pointerEvents='none'>

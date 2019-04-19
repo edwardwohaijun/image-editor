@@ -19,7 +19,7 @@ impl Image {
     // blocksize 必须有最小/大值, 即使JS指定了, Rust中也要check, JS中设置在[3, 9] 之间就可以了.
     // 且drag/拖拉region时, 也要防止w/h比block还小.
     // 一定要check img size, 不要让block size比img还大, 用户可以open一个超级小的img.
-    pub fn pixelate(&mut self, top_x: i32, top_y: i32, p_width: u32, p_height: u32, block_size: u32) {
+    pub fn pixelate(&mut self, top_x: i32, top_y: i32, p_width: u32, p_height: u32, block_size: u32, blur_type: &str) {
         let img_width = self.width;
         let img_height = self.height;
 
@@ -35,6 +35,10 @@ impl Image {
         }
 
         self.restore_area(false);
+        if blur_type == "gaussian" {
+            self.gaussian_blur(block_size as f64, top_x as i32, top_y as i32, p_width, p_height, false);
+            return
+        }
 
         let mut x; // X/Y position of pixelated region in original img
         let mut y;
