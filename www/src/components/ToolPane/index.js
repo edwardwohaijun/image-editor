@@ -1,22 +1,20 @@
-import imgObj from '../common/imgObj';
 import React, {Component} from 'react';
 import {connect} from "react-redux";
 import toolIcons from './toolIcons'
-import ToolPropList from './ToolPropList'
+import AccordionMenu from './AccordionMenu'
 
-// todo: rename to 'EditorList', how does that sound????
 class ToolPane extends Component {
   constructor(props) {
     super(props);
-    this.toolPropsList = null;
+    this.accordion = null;
     this.state = {
     };
   }
 
   componentDidMount = () => { };
   componentDidUpdate = (prevProps, prevState) => {
-    if (!this.props.selectedTool) { // restoring the img should move toolPropsList back to original position.
-      this.toolPropsList.style.transform = 'translate(0px, 0px)'
+    if (!this.props.selectedTool) { // restoring the img should move Accordion back to original position.
+      this.accordion.style.transform = 'translate(0px, 0px)'
     }
   };
 
@@ -24,10 +22,10 @@ class ToolPane extends Component {
     let parent = evt.target.closest('.tool-icon');
     if (parent) {
       this.props.onSelectTool(parent.id);
-      this.toolPropsList.style.transform = 'translate(256px, 0px)'
+      this.accordion.style.transform = 'translate(256px, 0px)'
     } else {
       this.props.onSelectTool(null);
-      this.toolPropsList.style.transform = 'translate(0px, 0px)'
+      this.accordion.style.transform = 'translate(0px, 0px)'
     }
   };
 
@@ -35,10 +33,10 @@ class ToolPane extends Component {
     // -56px: the width of vertical toolbar on the left
     return (
         <div style={{display: 'flex', height: 'calc(100vh - 56px)'}}>
-          <div ref={div => this.toolPropsList = div} id='tool-prop-list'
+          <div ref={div => this.accordion = div} id='tool-prop-list'
                style={{width: '256px', height: '100%', position: 'absolute', backgroundColor: '#2d2e37', left: '-200px', zIndex: 5}}>
-            <ToolPropList selectedTool={this.props.selectedTool} close={this.onSelectTool} zoomRatio={this.props.zoomRatio}/>
-            {/* passing null(or passing nothing) close the ToolPropList pane, passing toolID open its propList pane */}
+            <AccordionMenu selectedTool={this.props.selectedTool} close={this.onSelectTool} zoomRatio={this.props.zoomRatio}/>
+            {/* passing null(or passing nothing) close the AccordionMenu(or hide it by translating it to the left), passing toolID translate it into the view */}
           </div>
           <ul style={{width: "56px", height: "100%", listStyleType: 'none', padding: '0', backgroundColor: '#3f414c', marginTop: 0, zIndex: 10}}>
             <ToolIcon id='tool-basic' iconID='basic' onClick={this.onSelectTool} selected={this.props.selectedTool === 'tool-basic'}/>

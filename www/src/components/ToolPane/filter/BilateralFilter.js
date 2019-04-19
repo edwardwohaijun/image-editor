@@ -29,10 +29,6 @@ export default class BilateralFilter extends Component {
   };
 
   bf = () => {
-    // setState is async, when we set {running: true}, there is no immediate update on DOM, \
-    // and the following wasm_img.bilateral_filter() will block the whole bf().
-    // putting wasm_img.bilateral_filter in setTimeout could sidestep this problem: DOM update first, then wasm call.
-    this.setState({running: true});
     setTimeout(() => {
       // this.incr is for iter_count, but when user change sigma_domain, we should pass 'incr = false' to recreate img from scratch, \
       // because the current img is based on old sigma_domain. To minimize the computation, just forget it.
@@ -45,8 +41,9 @@ export default class BilateralFilter extends Component {
       this.wasm_img.bilateral_filter(this.state.sigma_domain, this.state.sigma_range, iter_count, incr);
       this.props.redraw();
       this.setState({running: false})
-    }, 0);
-
+    }, 100); // bf() is mostly triggered by onChange, although we put bf() call after setState completion, \
+    // DOM update is not immediately in effect, wasm_img.bilateral_filter() still might precede the DOM update, \
+    // causing no blinking 'running' text, postponing 100ms could fix this in an ugly way.
   };
 
   onChange = evt => {
@@ -85,7 +82,7 @@ export default class BilateralFilter extends Component {
       this.incr = value - this.state[valueType]
     }
 
-    this.setState({[valueType]: value}, () => this.bf());
+    this.setState({[valueType]: value, running: true}, this.bf);
     this.changeApplied = false;
   };
 

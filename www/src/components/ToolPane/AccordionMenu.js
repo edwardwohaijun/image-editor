@@ -1,7 +1,6 @@
 import imgObj from '../common/imgObj'
 import {memory} from "image-editor/image_editor_bg";
 import React, {Component} from 'react';
-import {fromJS} from 'immutable'
 
 import BasicTool from './basic';
 import ColorTool from './color';
@@ -11,14 +10,14 @@ import TransformTool from './transform';
 
 // todo: rename this to: Accordion MenuList
 // todo: write a slider component to be used in each editor's for-loop.
-class ToolPropList extends Component {
+class AccordionMenu extends Component {
   constructor(props) {
     super(props);
     this.state = { };
   }
 
   // after each operation performed by wasm, we need to redraw the canvas with data read from Rust
-  redraw = reposition => { // todo: 最好pass一个arg, indicating whether ratio need to be applied, most operations like: filter/color don't change ratio
+  redraw = reposition => { // todo: pass and arg, indicating whether ratio need to be applied, most operations like: filter/color don't change ratio
     let wasm_img = imgObj.get_wasm_img();
     let w = wasm_img.width();
     let h = wasm_img.height();
@@ -55,7 +54,7 @@ class ToolPropList extends Component {
   }
 }
 
-export default ToolPropList
+export default AccordionMenu
 
 const Header = props => {
   return (

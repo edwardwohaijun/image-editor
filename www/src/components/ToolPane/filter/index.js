@@ -34,9 +34,18 @@ class FilterTool extends Component {
   render() {
     return (
         <div>
+          <ToolHeader onSelect={this.onSelectTool} toolID='filter-pixelate' selectedTool={this.state.selectedTool} label='PIXELATE'>
+            <Pixelate onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
+          </ToolHeader>
+
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-gaussianblur' selectedTool={this.state.selectedTool} label='BLUR'>
             <GaussianBlur onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>
+
+          <ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
+            <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
+          </ToolHeader>
+
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-bilateral-filter' selectedTool={this.state.selectedTool} label='SMOOTHEN' alertLevel="intermediate">
             <BilateralFilter onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
           </ToolHeader>
@@ -45,22 +54,13 @@ class FilterTool extends Component {
             <Cartoonify onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
           </ToolHeader>*/}
 
-          <ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
-            <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
-          </ToolHeader>
-
           {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-motionblur' selectedTool={this.state.selectedTool} label='MOTION BLUR'>
             <MotionBlur onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>*/}
 
-          <ToolHeader onSelect={this.onSelectTool} toolID='filter-pixelate' selectedTool={this.state.selectedTool} label='PIXELATE'>
-            <Pixelate onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
-          </ToolHeader>
-
           {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-sharpen' selectedTool={this.state.selectedTool} label='SHARPEN'>
             <Sharpen onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
           </ToolHeader>*/}
-
         </div>
   )}
 }
