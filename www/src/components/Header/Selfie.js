@@ -12,6 +12,7 @@ export default class Selfie extends Component {
       error: '', // todo: need to check error, in case users disallow or cameraNotFound, then all btn are disabled
     };
 
+    this.flash = null;
     this.video = null;
     this.canvas = null;
     this.stream = null;
@@ -42,6 +43,17 @@ export default class Selfie extends Component {
   // todo: remove后, 进入canvas, I need to go back to video mode, then take the shot agagin, how to "go back",
   takeShot = () => {
     this.canvas.getContext('2d').drawImage(this.video, 0, 0);
+    if (this.state.currentMedia === VIDEO) { // this is to simulate the camera-like flash effect,
+      this.flash.style.display = 'block';
+      this.flash.style.opacity = '0.8';
+      setTimeout(() => {
+        this.flash.style.opacity = '0.5';
+      }, 300);
+      setTimeout(() => {
+        this.flash.style.display = 'none';
+      }, 600)
+    }
+
     this.switchView();
   };
 
@@ -52,7 +64,6 @@ export default class Selfie extends Component {
   closeCamera = () => {
     let tracks = this.stream.getTracks();
     tracks.forEach(t => t.stop());
-    // this.stream.getTracks()[0].stop();
     this.video.srcObject = null;
     this.props.toggleCameraModal()
   };
@@ -100,8 +111,10 @@ export default class Selfie extends Component {
                 <CloseIcon onClick={this.onClick}/>
               </div>
 
+              <div ref={div => this.flash = div} id='flash' style={{width: videoW + 'px', height: videoH + 'px'}}/>
               <video ref={v => this.video = v} style={{zIndex: 15, position: 'absolute', top: 0}}/>
-              <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'} ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
+              <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'}
+                      ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
 
               <div style={{position: 'absolute', height: '48px', width: '100%', bottom: '0', backgroundColor: '#ddd', opacity: 0.3,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: '20'}}>
