@@ -13,9 +13,7 @@ export default class GaussianBlur extends Component {
     this.changeApplied = false; // Blur is applied the moment this component is loaded, thus, default should be 'false'
   }
 
-  // componentDidMount = () => this.blurTest();
   componentDidMount = () => setTimeout(this.blur, 0);
-
   componentWillUnmount = () => {
     if (!this.changeApplied) {
       this.wasm_img.discard_change();
@@ -24,12 +22,11 @@ export default class GaussianBlur extends Component {
   };
 
   blur = () => {
-    this.setState({running: true});
     setTimeout(() => {
       this.wasm_img.blur(this.state.radius);
       this.props.redraw();
       this.setState({running: false})
-    }, 0);
+    }, 100);
   };
 
   onChange = evt => {
@@ -56,10 +53,8 @@ export default class GaussianBlur extends Component {
       return
     }
 
-    this.setState({radius}, () => {
-      this.changeApplied = false;
-      this.blur()
-    });
+    this.setState({radius, running: true}, this.blur);
+    this.changeApplied = false;
   };
 
   onApply = () => {

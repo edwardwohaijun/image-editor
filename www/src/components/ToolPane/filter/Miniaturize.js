@@ -23,7 +23,9 @@ class Miniaturize extends Component {
   }
 
   miniaturize = () => {
-    this.setState({running: true});
+    if (!this.state.running) {
+      this.setState({running: true})
+    }
     setTimeout(() => {
       let sigma = this.state.sigma;
       let top, bottom;
@@ -46,8 +48,7 @@ class Miniaturize extends Component {
       }
       this.props.redraw();
       this.setState({running: false})
-    }, 0);
-
+    }, 100);
   };
 
   componentDidMount = () => this.props.showHandler(true);
@@ -74,28 +75,25 @@ class Miniaturize extends Component {
     // but now miniaturize() is async, I don't know how Rust handle this, but it looks like the first call is not running, \
     // so, I have to make it explicit.
     if (this.heights.top !== top_height && this.heights.bottom !== bottom_height) {
+      // this only happens when component get mounted the first time, default value of topHeight and bottomHeight are both 0, \
+      // now they got assigned with new value from miniHandlers.
       this.topOrBottom = "both";
       this.heights.top = top_height;
       this.heights.bottom = bottom_height;
-      this.miniaturize();
+    } else if (this.heights.top !== top_height) {
+      // these 2 cases happen when users drag one of the handlers
+      this.topOrBottom = "top";
+      this.heights.top = top_height;
+    } else if (this.heights.bottom !== bottom_height) {
+      this.topOrBottom = "bottom";
+      this.heights.bottom = bottom_height;
+    } else {
       return
     }
 
-    if (this.heights.top !== top_height) {
-      this.topOrBottom = "top";
-      this.heights.top = top_height;
-      this.miniaturize()
-    }
-
-    if (this.heights.bottom !== bottom_height) {
-      this.topOrBottom = "bottom";
-      this.heights.bottom = bottom_height;
-      this.miniaturize()
-    }
-
+    this.miniaturize();
     this.changeApplied = false;
   };
-
 
   onChange = evt => {
     let tgt = evt.target;
@@ -121,11 +119,10 @@ class Miniaturize extends Component {
       return
     }
 
-    this.setState({sigma}, () => {
-      this.changeApplied = false;
-      this.topOrBottom = "both";
-      this.miniaturize()
-    });
+    // when sigma changed, we need to apply it on both top and bottom
+    this.topOrBottom = "both";
+    this.setState({sigma}, this.miniaturize);
+    this.changeApplied = false;
   };
 
   onApply = () => {

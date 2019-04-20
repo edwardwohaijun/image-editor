@@ -22,7 +22,9 @@ class Pixelate extends Component {
   }
 
   pixelate = () => {
-    this.setState({running: true});
+    if (!this.state.running) {
+      this.setState({running: true})
+    }
     setTimeout(() => {
       // validity check.
       // x/y/w/h are rounded before passed from PixelateHandlers, it's possible: x + width > imgWidth
@@ -46,7 +48,7 @@ class Pixelate extends Component {
       this.wasm_img.pixelate(x, y, width, height, blockSize, blurType);
       this.props.redraw();
       this.setState({running: false})
-    }, 0);
+    }, 100);
   };
 
   componentDidMount = () => this.props.showHandler(true);
@@ -111,10 +113,8 @@ class Pixelate extends Component {
       return
     }
 
-    this.setState({blockSize, blurType}, () => {
-      this.changeApplied = false;
-      this.pixelate()
-    });
+    this.setState({blockSize, blurType}, this.pixelate);
+    this.changeApplied = false;
   };
 
   onApply = () => {

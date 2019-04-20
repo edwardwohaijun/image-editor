@@ -36,9 +36,7 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
 
   setMiniRegion = () => {
     let ratio = this.props.zoomRatio;
-    //let x = Math.round((this.handlerX - CIRCLE_RADIUS) / ratio);
     let y = Math.round((this.handlerY - CIRCLE_RADIUS) / ratio);
-    //let width = Math.round(this.handlerWidth / ratio);
     let height = Math.round(this.handlerHeight / ratio);
     this.props.setMiniHeights({top: y, bottom: this.props.imgHeight - (y + height)});
   };
