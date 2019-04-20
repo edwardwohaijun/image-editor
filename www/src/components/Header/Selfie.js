@@ -44,16 +44,8 @@ export default class Selfie extends Component {
   takeShot = () => {
     this.canvas.getContext('2d').drawImage(this.video, 0, 0);
     if (this.state.currentMedia === VIDEO) { // this is to simulate the camera-like flash effect,
-      this.flash.style.display = 'block';
-      this.flash.style.opacity = '0.8';
-      setTimeout(() => {
-        this.flash.style.opacity = '0.5';
-      }, 300);
-      setTimeout(() => {
-        this.flash.style.display = 'none';
-      }, 600)
+      this.toggleFlashCls()
     }
-
     this.switchView();
   };
 
@@ -68,8 +60,16 @@ export default class Selfie extends Component {
     this.props.toggleCameraModal()
   };
 
-  componentDidMount = () => {
+  toggleFlashCls = () => {
+    let clsLs = this.flash.classList;
+    if (clsLs.contains('flash')) {
+      clsLs.remove('flash')
+    } else {
+      clsLs.add('flash')
+    }
+  };
 
+  componentDidMount = () => {
     navigator.getUserMedia(this.constraints,
         stream => {
           this.stream = stream;
@@ -89,8 +89,10 @@ export default class Selfie extends Component {
           this.setState({error: err})
         }
     );
-
+    this.flash.addEventListener("animationend", this.toggleFlashCls)
   };
+
+  componentWillUnmount = () => this.flash.removeEventListener("animationend", this.toggleFlashCls);
 
   componentDidUpdate = () => {};
 
