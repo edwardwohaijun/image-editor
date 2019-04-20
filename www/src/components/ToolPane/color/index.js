@@ -42,10 +42,11 @@ export default ColorTool
 const ToolHeader = props => {
   let selected = props.selectedTool === props.toolID;
   let svgStyle = selected ? {transform: 'rotate(180deg)'} : {transform: 'rotate(0deg)'};
+  let selectedStyle = selected ? {color: 'darkorange'} : null;
   return (
       <div className='editor-header-wrapper'>
         <div id={props.toolID} className='editor-header' onClick={props.onSelect}>
-          <span>{props.label}</span>
+          <span style={selectedStyle}>{props.label}</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="8" className='svg-down-arrow' style={svgStyle}>
             <path fill="#CCC" d="M7.19 7.54L0 .34.34 0l6.85 6.85L14.04 0l.34.34-7.19 7.2z"/>
           </svg>

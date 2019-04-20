@@ -19,7 +19,7 @@ export default class BilateralFilter extends Component {
 
   // this.bf() would take about 20s to finish, when you click to enter into this component,\
   // page would hang with no response, after 20s, this component's DOM content would show up.
-  // setTimeout won't change anything, just show the DOM first, telling people, the page is still running.
+  // setTimeout won't change anything, just show the DOM first, telling people, the page is still running, then call bf().
   componentDidMount = () => setTimeout(this.bf, 0);
   componentWillUnmount = () => {
     if (!this.changeApplied) {

@@ -64,7 +64,7 @@ class Scale extends Component {
     this.props.setWidthHeight({width: this.imgWidth, height: this.imgHeight});
 
     this.wasm_img.apply_change();
-    this.setState({scaleFactor: 100});
+    // this.setState({scaleFactor: 100});
     this.changeApplied = true;
     // it's too complicated to re-calculate the new position of CropHandlers after crop, so I just unmount current component to hide CropHandler
     this.props.onSelectTool('') // unmount myself. Grandparent component will check 'selectedTool' value, then decide which to mount/unmount

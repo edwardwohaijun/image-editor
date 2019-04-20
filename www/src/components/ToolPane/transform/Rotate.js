@@ -10,40 +10,54 @@ class Rotate extends Component {
     super(props);
     this.wasm_img = imgObj.get_wasm_img();
     this.state = { };
+    this.changeApplied = true;
+    this.switched = false;
     this.op = {
       'rotate_counter_clockwise': () => {
-        this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
+        // this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
+        this.switched = !this.switched;
         this.wasm_img.rotate(false);
       },
       'rotate_clockwise': () => {
-        this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
+        // this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
+        this.switched = !this.switched;
         this.wasm_img.rotate(true);
       },
-      'flip_h': () => {
+      'flip_h': () => { // this can be done within JS by: ctx.scale(-1, 1); 哈哈
         this.wasm_img.flip_h();
       },
       'flip_v': () => {
         this.wasm_img.flip_v();
       }
-    }
+    };
   }
 
-  // rotate 90 is an reversible operation, no need to call apply() in onClick handler,
-  // I don't even bother adding an 'apply' button,
-  // just apply the changes before unmount.
   componentWillUnmount = () => {
-    this.wasm_img.apply_change();
+    if (!this.changeApplied) {
+      this.wasm_img.discard_change();
+      this.props.redraw();
+    }
   };
 
   onClick = evt => {
     this.op[evt.target.id]();
+    this.changeApplied = false;
     this.props.redraw()
+  };
+
+  onApply = () => {
+    if (this.switched) {
+      this.props.setWidthHeight({width: this.props.imgHeight, height: this.props.imgWidth});
+    }
+    this.wasm_img.apply_change();
+    this.changeApplied = true;
+    this.props.onSelectTool('');
   };
 
   render() {
     return (
         <div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '24px'}}>
             <button className='editor-btn' id='rotate_counter_clockwise' onClick={this.onClick}>
               {icons.rotate_counter_clockwise}
             </button>
@@ -57,6 +71,15 @@ class Rotate extends Component {
               {icons.flip_vertical}
             </button>
           </div>
+
+          <div style={{display: 'flex', justifyContent: 'space-around'}}>
+            <button className='primary-btn apply-btn' onClick={this.onApply}>
+              <svg viewBox="0 0 20 20" width="20" height="20" transform='scale(0.8, 0.8)'>
+                <path fillRule="evenodd" fill='#FFF' d="M18.388 2L20 3.557 6.576 17.458 0 11.108 1.804 9.24l4.964 4.793L18.388 2z" />
+              </svg>
+            </button>
+          </div>
+
         </div>
     )}
 }
