@@ -36,7 +36,6 @@ export default class OpenImage extends Component {
   onFileChange = evt => {
     this.setState({dropdownVisible: false});
     let file = evt.target.files[0];
-    // setTimeout(() => this.props.loadImage(file, 2000));
     this.props.loadImage(file)
   };
 

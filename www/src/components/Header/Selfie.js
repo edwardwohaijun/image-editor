@@ -9,13 +9,13 @@ export default class Selfie extends Component {
     this.state = {
       currentMedia: NO_MEDIA,
       videoDimension: {width: 800, height: 600},
-      error: '', // todo: need to check error, in case users disallow or cameraNotFound, then all btn are disabled
+      error: false,
+      showFilter: false,
     };
 
     this.flash = null;
     this.video = null;
     this.canvas = null;
-    this.stream = null;
     this.constraints = {
       video: {
         width: {min: 640, ideal: 800},
@@ -28,7 +28,8 @@ export default class Selfie extends Component {
       'btn-remove-shot': this.switchView,
       'btn-take-shot': this.takeShot,
       'btn-confirm-shot': this.confirmShot,
-      'btn-close-camera': this.closeCamera
+      'btn-close-camera': this.closeCamera,
+      'btn-filter-shot': this.applyFilter,
     }
   }
 
@@ -55,10 +56,17 @@ export default class Selfie extends Component {
     }, 'image/png');
   };
 
+  applyFilter = () => {
+    console.log("filter")
+  };
+
   closeCamera = () => {
-    let tracks = this.stream.getTracks();
-    tracks.forEach(t => t.stop());
-    this.video.srcObject = null;
+    let stream = this.video.srcObject;
+    if (stream) {
+      let tracks = stream.getTracks();
+      tracks.forEach(t => t.stop());
+      this.video.srcObject = null;
+    }
     this.props.toggleCameraModal()
   };
 
@@ -72,31 +80,27 @@ export default class Selfie extends Component {
   };
 
   componentDidMount = () => {
-    navigator.getUserMedia(this.constraints,
-        stream => {
-          this.stream = stream;
-          try {
-            this.video.src = window.URL.createObjectURL(stream);
-          } catch (error) {
-            this.video.srcObject = stream;
-          }
-          this.video.play();
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      this.setState({error: true});
+      return
+    }
+
+    navigator.mediaDevices.getUserMedia(this.constraints)
+        .then(stream => {
+          this.video.srcObject = stream;
           this.video.onloadedmetadata = () => {
-            this.setState({videoDimension: {width: this.video.videoWidth, height: this.video.videoHeight}, currentMedia: VIDEO, error: ''});
+            this.setState({videoDimension: {width: this.video.videoWidth, height: this.video.videoHeight}, currentMedia: VIDEO, error: false});
           };
-        },
-        err => { // Most common errors are PermissionDenied and DevicesNotFound.
-          // show it on page
-          console.error(err);
-          this.setState({error: err})
-        }
-    );
+        })
+        .catch(err => {
+          console.error("error acquiring video stream: ", err);
+          this.setState({error: true})
+        });
+
     this.flash.addEventListener("animationend", this.toggleFlashCls)
   };
 
   componentWillUnmount = () => this.flash.removeEventListener("animationend", this.toggleFlashCls);
-
-  componentDidUpdate = () => {};
 
   onClick = evt => {
     let btnID = evt.target.id;
@@ -106,6 +110,7 @@ export default class Selfie extends Component {
   render() {
     let videoW = this.state.videoDimension.width;
     let videoH = this.state.videoDimension.height;
+    let iconVisible = this.state.currentMedia === NO_MEDIA ? 'hidden' : 'visible';
     return (
         <div id='modal-camera'>
           <div id='selfie-wrapper' style={{width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
@@ -116,13 +121,19 @@ export default class Selfie extends Component {
               </div>
 
               <div ref={div => this.flash = div} id='flash' style={{width: videoW + 'px', height: videoH + 'px'}}/>
-              <video ref={v => this.video = v} style={{zIndex: 15, position: 'absolute', top: 0}}/>
+              {
+                !this.state.error ? null : <div style={{width: videoW + 'px', height: videoH + 'px', position: 'absolute', top: 0, borderRadius: '6px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',  backgroundColor: '#FFF'}}>
+                  <ErrorMsg />
+                </div>
+              }
+              <video ref={v => this.video = v} autoPlay style={{zIndex: 15, position: 'absolute', top: 0}}/>
               <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'}
                       ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
 
-              <div style={{position: 'absolute', height: '48px', width: '50%', left: videoW/4 + 'px', bottom: '0', backgroundColor: 'transparent',
+              <div style={{visibility: iconVisible, position: 'absolute', height: '48px', width: '50%', left: videoW/4 + 'px', bottom: '0', backgroundColor: 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: '20'}}>
-                {/* <DeleteIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/> */}
+                <FilterIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
                 <CameraIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
                 <OkIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
               </div>
@@ -132,35 +143,6 @@ export default class Selfie extends Component {
         </div>
     )}
 }
-
-/*
-const DeleteIcon = props => {
-  let m = props.currentMedia;
-  let disabled = (m !== CANVAS);
-  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
-  return (
-      <button id='btn-remove-shot' className={cls} onClick={props.onClick} disabled={disabled}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="29.8" height="39.98" pointerEvents='none'>
-          <path d="M3.49 38.06a2 2 0 0 0 2 1.92h18.8a2 2 0 0 0 2-1.92l1.34-28.32H2.15zm15.66-21.29a.82.82 0 0 1 .83-.77h1.31a.82.82 0 0 1 .82.82V33a.82.82 0 0 1-.82.82h-1.31a.82.82 0 0 1-.81-.82zm-5.72 0a.82.82 0 0 1 .81-.82h1.31a.82.82 0 0 1 .82.82V33a.82.82 0 0 1-.82.82h-1.31a.82.82 0 0 1-.81-.82V16.77zm-5.72 0a.82.82 0 0 1 .81-.77h1.31a.82.82 0 0 1 .82.82V33a.82.82 0 0 1-.82.82H8.52a.82.82 0 0 1-.81-.82zM28.53 2.06h-8.66V.42a.42.42 0 0 0-.42-.42h-9.1a.42.42 0 0 0-.43.42v1.64H1.26A1.26 1.26 0 0 0-.02 3.32v4h29.8v-4a1.27 1.27 0 0 0-1.25-1.26z"/>
-        </svg>
-      </button>
-  )};
-*/
-
-/*
-const CameraIcon2 = props => {
-  let m = props.currentMedia;
-  let disabled = (m === NO_MEDIA);
-  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
-  return (
-      <button id='btn-take-shot' className={cls} onClick={props.onClick} disabled={disabled}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="40" pointerEvents='none'>
-          <path fill={m === VIDEO ? "red" : "#030104"}
-                d="M25 15a7.5 7.5 0 1 0 7.5 7.5A7.5 7.5 0 0 0 25 15zm20-7.5h-6a2.22 2.22 0 0 1-2-1.42l-1.53-4.66A2.22 2.22 0 0 0 33.5 0h-17a2.23 2.23 0 0 0-2 1.42L13 6.08a2.23 2.23 0 0 1-2 1.42H5a5 5 0 0 0-5 5V35a5 5 0 0 0 5 5h40a5 5 0 0 0 5-5V12.5a5 5 0 0 0-5-5zM25 35a12.5 12.5 0 1 1 12.5-12.5A12.5 12.5 0 0 1 25 35zm18.25-19A1.75 1.75 0 1 1 45 14.25 1.75 1.75 0 0 1 43.25 16z"/>
-        </svg>
-      </button>
-  )};
-*/
 
 const CameraIcon = props => {
   let m = props.currentMedia;
@@ -175,20 +157,6 @@ const CameraIcon = props => {
       </button>
   )};
 
-/*
-const OkIcon2 = props => {
-  let m = props.currentMedia;
-  let disabled = (m !== CANVAS);
-  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
-  return (
-    <button id='btn-confirm-shot' className={cls} onClick={props.onClick} disabled={disabled}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="56" height="41.13" pointerEvents='none'>
-        <path d="M55.18.82a2.79 2.79 0 0 0-4 0L17.67 34.36 4.78 21.47a2.828 2.828 0 0 0-4 4L15.69 40.3a2.79 2.79 0 0 0 4 0L55.18 4.78a2.81 2.81 0 0 0 0-3.96z"/>
-      </svg>
-    </button>
-)};
-*/
-
 const OkIcon = props => {
   let m = props.currentMedia;
   let disabled = (m !== CANVAS);
@@ -199,7 +167,7 @@ const OkIcon = props => {
         <path fill='#387dcd' d="M18 0a18 18 0 1 0 18 18A18 18 0 0 0 18 0zm10 12L17 24.46a1.36 1.36 0 0 1-1 .46 1.39 1.39 0 0 1-.86-.3l-7.01-5.54a1.38 1.38 0 0 1 1.73-2.16l5.9 4.72L26 10.16A1.38 1.38 0 1 1 28 12z"/>
       </svg>
     </button>
-)};
+  )};
 
 const CloseIcon = props => (
     <button id='btn-close-camera' className='camera-action' style={{float: 'right'}} onClick={props.onClick}>
@@ -208,3 +176,37 @@ const CloseIcon = props => (
       </svg>
     </button>
 );
+
+const FilterIcon = props => {
+  let m = props.currentMedia;
+  let disabled = (m !== VIDEO);
+  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
+  return (
+    <button id='btn-filter-shot' className={cls} onClick={props.onClick} disabled={disabled}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="37.56" height="37.56" pointerEvents='none'>
+          <circle cx="18.78" cy="18.78" r="18.28" stroke="none" fill="#387DCD"/>
+          <path fill="#FFF" stroke="none" d="M11.51 16.7l.54 1.46a.14.14 0 0 0 .26 0l.54-1.46a4.31 4.31 0 0 1 2.55-2.55l1.47-.54a.15.15 0 0 0 .09-.13.16.16 0 0 0-.09-.14l-1.47-.54a4.31 4.31 0 0 1-2.55-2.55l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.3 4.3 0 0 1-2.56 2.55l-1.46.54a.16.16 0 0 0-.09.14.15.15 0 0 0 .09.13l1.46.54a4.3 4.3 0 0 1 2.56 2.55zM23.37 22.88l-1.47-.54a4.33 4.33 0 0 1-2.55-2.56l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.33 4.33 0 0 1-2.55 2.56l-1.47.54a.14.14 0 0 0 0 .26l1.47.54a4.34 4.34 0 0 1 2.55 2.55l.57 1.47a.14.14 0 0 0 .26 0l.54-1.47a4.34 4.34 0 0 1 2.55-2.55l1.47-.54a.14.14 0 0 0 0-.26zM30.94 16.62l-1-.36a2.94 2.94 0 0 1-1.73-1.74l-.37-1a.1.1 0 0 0-.09-.07.11.11 0 0 0-.09.07l-.36 1a3 3 0 0 1-1.74 1.74l-1 .36a.11.11 0 0 0-.07.09.1.1 0 0 0 .07.09l1 .37a2.94 2.94 0 0 1 1.74 1.73l.36 1a.11.11 0 0 0 .09.06.1.1 0 0 0 .09-.06l.37-1a2.9 2.9 0 0 1 1.73-1.73l1-.37a.1.1 0 0 0 .06-.09.11.11 0 0 0-.06-.09zM28.58 29.71l-.69-.26a2 2 0 0 1-1.21-1.21l-.26-.69a.06.06 0 0 0-.06-.05.06.06 0 0 0-.06.05l-.26.69a2.06 2.06 0 0 1-1.26 1.26l-.69.26a.06.06 0 0 0 0 .12l.69.26a2 2 0 0 1 1.21 1.21l.26.69a.06.06 0 0 0 .06 0 .06.06 0 0 0 .06 0l.26-.69a2 2 0 0 1 1.21-1.21l.69-.26a.07.07 0 0 0 0-.12zM23.42 9.77l-.7-.25a2.06 2.06 0 0 1-1.21-1.21l-.25-.7a.08.08 0 0 0-.07 0 .08.08 0 0 0-.06 0l-.25.7a2.05 2.05 0 0 1-1.22 1.19l-.69.25a.08.08 0 0 0 0 .06.08.08 0 0 0 0 .07l.69.25a2.05 2.05 0 0 1 1.22 1.21l.25.7a.08.08 0 0 0 .06 0 .08.08 0 0 0 .07 0l.25-.7a2.06 2.06 0 0 1 1.21-1.21l.7-.25a.08.08 0 0 0 0-.06.08.08 0 0 0 0-.05zM14.91 28.28l-.87-.32a2.57 2.57 0 0 1-1.52-1.52l-.33-.87a.07.07 0 0 0-.07-.06.08.08 0 0 0-.08.06l-.32.87a2.58 2.58 0 0 1-1.53 1.52l-.87.32a.09.09 0 0 0 0 .08.08.08 0 0 0 0 .08l.87.32a2.58 2.58 0 0 1 1.53 1.52l.32.88a.08.08 0 0 0 .08.05.08.08 0 0 0 .07-.05l.33-.88a2.57 2.57 0 0 1 1.52-1.52l.87-.32a.09.09 0 0 0 .06-.08.1.1 0 0 0-.06-.08z"/>
+        </svg>
+      </button>
+  )};
+
+const FilterList = props => {
+  return (
+      <ul>
+        <li>
+          
+        </li>
+      </ul>
+  )
+};
+
+const ErrorMsg = () =>
+    <div>
+      <h1>Possible reasons for this error</h1>
+      <ul>
+        <li>Your browser is too old, please use latest version of Chrome or Firefox.</li>
+        <li>You don't have any cameras plugged in.</li>
+        <li>You need to grant permission to use your camera, like the following screenshot shows:</li>
+      </ul>
+      <img src='/img/permissionDialog.jpg'/>
+    </div>;
