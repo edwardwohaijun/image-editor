@@ -40,7 +40,7 @@ export default class OpenImage extends Component {
     this.props.loadImage(file)
   };
 
-  toggleCameraModal = () => this.setState({openCamera: !this.state.openCamera});
+  toggleCameraModal = () => this.setState({openCamera: !this.state.openCamera, dropdownVisible: false});
 
   onGoToURL = evt => {
     let url = evt.target.parentElement.querySelector('#img-url').value;
@@ -91,7 +91,7 @@ export default class OpenImage extends Component {
 
                 </ul>
           }
-          {this.state.openCamera ? <Selfie toggleCameraModal={this.toggleCameraModal}/> : null}
+          {this.state.openCamera ? <Selfie loadImage={this.props.loadImage} toggleCameraModal={this.toggleCameraModal}/> : null}
         </div>
     )}
 }

@@ -40,7 +40,6 @@ export default class Selfie extends Component {
     this.setState({currentMedia: -1 * this.state.currentMedia})
   };
 
-  // todo: remove后, 进入canvas, I need to go back to video mode, then take the shot agagin, how to "go back",
   takeShot = () => {
     this.canvas.getContext('2d').drawImage(this.video, 0, 0);
     if (this.state.currentMedia === VIDEO) { // this is to simulate the camera-like flash effect,
@@ -50,7 +49,10 @@ export default class Selfie extends Component {
   };
 
   confirmShot = () => {
-    console.log("confirmed")
+    this.canvas.toBlob(blob => { // toDataURL failed for big canvas
+      this.props.loadImage(blob);
+      this.closeCamera()
+    }, 'image/png');
   };
 
   closeCamera = () => {
@@ -118,9 +120,9 @@ export default class Selfie extends Component {
               <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'}
                       ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
 
-              <div style={{position: 'absolute', height: '48px', width: '100%', bottom: '0', backgroundColor: '#ddd', opacity: 0.3,
+              <div style={{position: 'absolute', height: '48px', width: '50%', left: videoW/4 + 'px', bottom: '0', backgroundColor: 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: '20'}}>
-                <DeleteIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
+                {/* <DeleteIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/> */}
                 <CameraIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
                 <OkIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
               </div>
@@ -131,7 +133,7 @@ export default class Selfie extends Component {
     )}
 }
 
-// this is unnecessary...................
+/*
 const DeleteIcon = props => {
   let m = props.currentMedia;
   let disabled = (m !== CANVAS);
@@ -143,8 +145,10 @@ const DeleteIcon = props => {
         </svg>
       </button>
   )};
+*/
 
-const CameraIcon = props => {
+/*
+const CameraIcon2 = props => {
   let m = props.currentMedia;
   let disabled = (m === NO_MEDIA);
   let cls = 'camera-action ' + (disabled ? 'disabled' : '');
@@ -156,8 +160,23 @@ const CameraIcon = props => {
         </svg>
       </button>
   )};
+*/
 
-const OkIcon = props => {
+const CameraIcon = props => {
+  let m = props.currentMedia;
+  let disabled = (m === NO_MEDIA);
+  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
+  return (
+      <button id='btn-take-shot' className={cls} onClick={props.onClick} disabled={disabled}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="35.05" height="35.05" pointerEvents='none'>
+          <circle cx="17.52" cy="17.52" r="17.02" fill={m === VIDEO ? "red" : "#387dcd"} stroke="none" strokeMiterlimit="10"/>
+          <path fill="#fff" stroke="none" strokeMiterlimit="10" d="M17.54 14.96a3 3 0 1 0 3 3 3 3 0 0 0-3-3zm8-3h-2.39a.9.9 0 0 1-.79-.57l-.62-1.86a.89.89 0 0 0-.79-.57h-6.81a.88.88 0 0 0-.79.57l-.62 1.86a.91.91 0 0 1-.8.57h-2.4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-9a2 2 0 0 0-1.97-2zm-8 11a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm7.31-7.62a.7.7 0 1 1 0-1.4.7.7 0 1 1 0 1.4z"/>
+        </svg>
+      </button>
+  )};
+
+/*
+const OkIcon2 = props => {
   let m = props.currentMedia;
   let disabled = (m !== CANVAS);
   let cls = 'camera-action ' + (disabled ? 'disabled' : '');
@@ -168,11 +187,24 @@ const OkIcon = props => {
       </svg>
     </button>
 )};
+*/
+
+const OkIcon = props => {
+  let m = props.currentMedia;
+  let disabled = (m !== CANVAS);
+  let cls = 'camera-action ' + (disabled ? 'disabled' : '');
+  return (
+    <button id='btn-confirm-shot' className={cls} onClick={props.onClick} disabled={disabled}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" pointerEvents='none'>
+        <path fill='#387dcd' d="M18 0a18 18 0 1 0 18 18A18 18 0 0 0 18 0zm10 12L17 24.46a1.36 1.36 0 0 1-1 .46 1.39 1.39 0 0 1-.86-.3l-7.01-5.54a1.38 1.38 0 0 1 1.73-2.16l5.9 4.72L26 10.16A1.38 1.38 0 1 1 28 12z"/>
+      </svg>
+    </button>
+)};
 
 const CloseIcon = props => (
     <button id='btn-close-camera' className='camera-action' style={{float: 'right'}} onClick={props.onClick}>
       <svg xmlns="http://www.w3.org/2000/svg" width="30.7" height="30.7" pointerEvents='none'>
-        <path d="M26.21 4.49a15.36 15.36 0 1 0 0 21.72 15.37 15.37 0 0 0 0-21.72zm-4.8 16.92a1.18 1.18 0 0 1-1.67 0L15.35 17l-4.59 4.6A1.18 1.18 0 0 1 9.09 20l4.59-4.6L9.3 11A1.202 1.202 0 0 1 11 9.3l4.38 4.38 4.15-4.18a1.18 1.18 0 1 1 1.67 1.67L17 15.35l4.39 4.39a1.18 1.18 0 0 1 .02 1.67z"/>
+        <path fill='#387dcd' d="M26.21 4.49a15.36 15.36 0 1 0 0 21.72 15.37 15.37 0 0 0 0-21.72zm-4.8 16.92a1.18 1.18 0 0 1-1.67 0L15.35 17l-4.59 4.6A1.18 1.18 0 0 1 9.09 20l4.59-4.6L9.3 11A1.202 1.202 0 0 1 11 9.3l4.38 4.38 4.15-4.18a1.18 1.18 0 1 1 1.67 1.67L17 15.35l4.39 4.39a1.18 1.18 0 0 1 .02 1.67z"/>
       </svg>
     </button>
 );

@@ -102,7 +102,7 @@ class Main extends Component {
 
     // const imgBlob = await fetch(src).then(resp => resp.blob());
     // const img = await createImageBitmap(imgBlob); // imgBigmap only has width and height props.
-    if (src instanceof File) {
+    if (src instanceof Blob) { // File is a derivation of Blob, with some extra props: like fileName.
       if (!src.type.match('image.*')) {
         return // todo: pop up a msg
       }
