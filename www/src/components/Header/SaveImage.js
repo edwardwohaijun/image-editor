@@ -13,7 +13,7 @@ export default class Save extends Component {
   componentDidMount = () => { };
   componentDidUpdate = () => { };
 
-  onSave = () => {r
+  onSave = () => {
     // the current drawing canvas is zoom-ratio applied, if we use this one to download the canvas img \
     // the img dimension will not be the original size.
     let canvas = document.createElement('canvas');
@@ -28,7 +28,6 @@ export default class Save extends Component {
           let ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           canvas.toBlob(blob => { // toDataURL failed for big canvas
-            console.log("blob: ", blob);
             let link = document.createElement('a');
             link.download = "download.png";
             link.href = URL.createObjectURL(blob);
