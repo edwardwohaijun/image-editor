@@ -288,22 +288,3 @@ const composePath = (outer, inner) => {
   let innerRect = 'M' + inner.x + ','  + inner.y + ' v' + inner.height + ' h' + inner.width + ' v-' + inner.height + ' z';
   return outerRect + innerRect
 };
-
-// only decompose innerRect
-/*
-const decomposePath = str => {
-  let innerRec = str.split('z')[1];
-  let parts = innerRec.split(' ');
-  let xy = parts[0].substring(1).split(',');
-  let pathX = parseInt(xy[0]);
-  let pathY = parseInt(xy[1]);
-
-  let height = parts[1];
-  height = parseInt(height.substring(1));
-
-  let width = parts[2];
-  width = parseInt(width.substring(1));
-
-  return {pathX, pathY, width, height}
-};
-*/

@@ -163,8 +163,8 @@ export default class BilateralFilter extends Component {
             The following 2 celebrity images best represent this filtering result.
           </p>
           <ul style={{fontSize: '12px', paddingLeft: '12px', color: '#00B7FF'}} onClick={this.loadImage}>
-            <li className='clickable' id='/img/EddieRedmayne.jpg'>Eddie Redmayne</li>
-            <li className='clickable' id='/img/EmmaStone.jpg'>Emma Stone</li>
+            <li className='clickable' id='/image-editor/img/EddieRedmayne.jpg'>Eddie Redmayne</li>
+            <li className='clickable' id='/image-editor/img/EmmaStone.jpg'>Emma Stone</li>
           </ul>
         </div>
     )}
