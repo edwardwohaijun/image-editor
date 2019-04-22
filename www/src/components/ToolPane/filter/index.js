@@ -43,11 +43,11 @@ class FilterTool extends Component {
           </ToolHeader>
 
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-miniaturize' selectedTool={this.state.selectedTool} label='MINIATURIZE'>
-            <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw}/>
+            <Miniaturize onSelectTool={this.onSelectTool} redraw={this.props.redraw} loadImage={this.props.loadImage}/>
           </ToolHeader>
 
           <ToolHeader onSelect={this.onSelectTool} toolID='filter-bilateral-filter' selectedTool={this.state.selectedTool} label='SMOOTHEN'>
-            <BilateralFilter onSelectTool={this.onSelectTool} redraw={this.props.redraw} />
+            <BilateralFilter onSelectTool={this.onSelectTool} redraw={this.props.redraw} loadImage={this.props.loadImage}/>
           </ToolHeader>
 
           {/*<ToolHeader onSelect={this.onSelectTool} toolID='filter-cartoonify' selectedTool={this.state.selectedTool} label='CARTOONIFY'>

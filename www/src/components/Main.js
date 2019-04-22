@@ -17,7 +17,7 @@ class Main extends Component {
       selectedTool: null,
     };
     // this.imgSrc = '/img/wonder-woman.jpg';
-    // this.imgSrc = '/img/len_full.jpg';
+    this.imgSrc = '/img/len_full.jpg';
     // this.imgSrc = '/img/road.jpg';
     //this.imgSrc = '/img/stairs.jpg';
     // this.imgSrc = '/img/lake.jpg';
@@ -25,9 +25,8 @@ class Main extends Component {
     // this.imgSrc = '/img/endgame.png';
     // this.imgSrc = '/img/cap.png';
     // this.imgSrc = '/img/EddieRedmayne.jpg';
-    this.imgSrc = '/img/miniaturize/constructionSite1.jpg'
+    // this.imgSrc = '/img/miniaturize/constructionSite1.jpg'
 
-    // todo: use some img explicit for some purpose, like: under/over-exposed, high/low-contrast, too bright/dark, too vivid/dull, too sharp/soft
   }
 
   onSelectTool = id => this.setState({selectedTool: id});
@@ -90,10 +89,8 @@ class Main extends Component {
     }
   };
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
-  loadImage = src => { // todo: use fetch(), then read as blob, rather than base64
+  // todo: make this an Redux action
+  loadImage = src => {
     if (!src) {
       src = this.imgSrc
     }
@@ -175,7 +172,7 @@ class Main extends Component {
         <div>
           <Header resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} />
           <div style={{display: 'flex', position: 'relative', zIndex: '50',  bottom: '0px', width: '100%'}}>
-            <ToolPane onSelectTool={this.onSelectTool} selectedTool={this.state.selectedTool}/>
+            <ToolPane onSelectTool={this.onSelectTool} selectedTool={this.state.selectedTool} loadImage={this.loadImage}/>
             <div style={canvasParentStyle} id='canvas-parent'>
               <Canvas resizeCanvas={this.resizeCanvas} loadImage={this.loadImage} containerWidth={containerWidth}/>
               <Footer resizeCanvas={this.resizeCanvas}/>

@@ -8,7 +8,6 @@ import FilterTool from './filter';
 import TextTool from './text';
 import TransformTool from './transform';
 
-// todo: rename this to: Accordion MenuList
 // todo: write a slider component to be used in each editor's for-loop.
 class AccordionMenu extends Component {
   constructor(props) {
@@ -45,7 +44,7 @@ class AccordionMenu extends Component {
     switch (this.props.selectedTool) {
       case 'tool-basic': label = 'BASIC'; tool = <BasicTool redraw={this.redraw}/>; break;
       case 'tool-color': label = 'COLOR'; tool = <ColorTool redraw={this.redraw}/>; break;
-      case 'tool-filter': label = 'FILTER'; tool = <FilterTool redraw={this.redraw}/>; break;
+      case 'tool-filter': label = 'FILTER'; tool = <FilterTool redraw={this.redraw} loadImage={this.props.loadImage}/>; break;
       case 'tool-text': label = 'TEXT'; tool = <TextTool redraw={this.redraw}/>; break;
       case 'tool-transform': label = 'TRANSFORM'; tool = <TransformTool redraw={this.redraw}/>; break;
       default: return null

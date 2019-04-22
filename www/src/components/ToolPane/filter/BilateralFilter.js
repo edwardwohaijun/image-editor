@@ -92,6 +92,11 @@ export default class BilateralFilter extends Component {
     this.props.onSelectTool(''); // to unmount myself.
   };
 
+  loadImage = evt => {
+    this.props.onSelectTool(''); // to unmount myself.
+    this.props.loadImage(evt.target.id);
+  };
+
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
@@ -148,20 +153,19 @@ export default class BilateralFilter extends Component {
             </div>
           </div>
 
+          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
+            when the above 2 sliders approach max value(takes long time to finish), this filter will generate cartoonish feel.
+          </p>
+
           <ApplyButton onApply={this.onApply}/>
 
           <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
-            This is an edge-preserving blurring filter, mostly used to remove noise.
-            Open the following 2 images of celebrities with some freckles, and see the filtering result.
+            The following 2 celebrity images best represent this filtering result.
           </p>
-          <ul style={{fontSize: '12px', paddingLeft: '12px'}}>
-            <li>Eddie Redmayne</li>
-            <li>Emma Stone</li>
+          <ul style={{fontSize: '12px', paddingLeft: '12px', color: '#00B7FF'}} onClick={this.loadImage}>
+            <li className='clickable' id='/img/EddieRedmayne.jpg'>Eddie Redmayne</li>
+            <li className='clickable' id='/img/EmmaStone.jpg'>Emma Stone</li>
           </ul>
-          <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
-            when the above 2 sliders approach max value(takes long time to finish), this filter will generate cartoonish feel.
-            You can open your computer camera, take a selfie, and apply this filter.
-          </p>
         </div>
     )}
 }

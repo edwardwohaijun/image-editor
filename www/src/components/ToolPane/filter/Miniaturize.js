@@ -140,6 +140,11 @@ class Miniaturize extends Component {
     }
   };
 
+  loadImage = evt => {
+    this.props.onSelectTool(''); // to unmount myself.
+    this.props.loadImage(evt.target.id);
+  };
+
   render() {
     return (
         <div style={{marginBottom: '180x', color: '#CCC'}}>
@@ -173,13 +178,11 @@ class Miniaturize extends Component {
 
           <p style={{fontSize: '12px', marginTop: '18px', color: '#ddd'}}>
             This filter make subject look like a miniature-scale model.
-            To achieve the best effect, the image is better to exhibit the following characteristics:
+            The following 2 images best represent this filtering result.
           </p>
-          <ul style={{fontSize: '12px', paddingLeft: '12px'}}>
-            <li>The photo must be taken from above, but not directly overhead.</li>
-            <li>A simple scene is usually better than a complicated one.</li>
-            <li>Photo sharpness is a must, as well as good lighting.</li>
-            <li>If people are in the scene, they need to be fairly obscure and small.</li>
+          <ul style={{fontSize: '12px', paddingLeft: '12px', color: '#00B7FF'}} onClick={this.loadImage}>
+            <li className='clickable' id='/img/stadium.jpg'>Stadium</li>
+            <li className='clickable' id='/img/airport.jpg'>Airport</li>
           </ul>
         </div>
     )}
