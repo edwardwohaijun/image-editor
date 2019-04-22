@@ -35,9 +35,6 @@ class AccordionMenu extends Component {
         });
   };
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
   render() {
     let tool;
     let label;

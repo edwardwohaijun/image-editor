@@ -22,7 +22,6 @@ class ColorTool extends Component {
 
   componentDidMount = () => this.wasm_img.rgb_to_hsi();
   componentWillUnmount = () => this.wasm_img.clear_hsi();
-  componentDidUpdate = () => { };
 
   render() {
     return (

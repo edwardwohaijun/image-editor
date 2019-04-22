@@ -1,5 +1,4 @@
 import imgObj from '../../common/imgObj'
-//import canvasBK from '../../common/canvasBK';
 import React, {Component} from 'react';
 import {setWidthHeight} from "../../../actions";
 import {bindActionCreators} from "redux";
@@ -17,9 +16,6 @@ class Scale extends Component {
 
     this.state = {scaleFactor: 100} // use integer to get rid of rounding error when shown on page.
   }
-
-  componentDidMount = () => { };
-  componentDidUpdate = prevProps => { };
 
   componentWillUnmount = () => {
     if (!this.changeApplied) {

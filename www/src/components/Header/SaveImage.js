@@ -10,9 +10,6 @@ export default class Save extends Component {
     this.state = { };
   }
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
   onSave = () => {
     // the current drawing canvas is zoom-ratio applied, if we use this one to download the canvas img \
     // the img dimension will not be the original size.

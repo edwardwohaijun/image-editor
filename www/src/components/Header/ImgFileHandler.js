@@ -9,9 +9,6 @@ export default class ImgFileHandler extends Component {
     this.state = { };
   }
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
   render() {
     return (
         <div style={{display: 'flex', justifyContent: 'space-around', width: '280px', alignItems: 'center'}}>

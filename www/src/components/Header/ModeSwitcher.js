@@ -6,17 +6,9 @@ class ModeSwitcher extends Component {
     };
   }
 
-  componentDidMount = () => {
-
-  };
-
-  componentDidUpdate = () => {
-
-  };
-
   render() {
     return (
-        <div>photo editor</div>
+        <div>image editor</div>
     )}
 }
 

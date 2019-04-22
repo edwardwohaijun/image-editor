@@ -6,14 +6,6 @@ class Layers extends Component {
     };
   }
 
-  componentDidMount = () => {
-
-  };
-
-  componentDidUpdate = () => {
-
-  };
-
   render() {
     return (
         <div>layers</div>

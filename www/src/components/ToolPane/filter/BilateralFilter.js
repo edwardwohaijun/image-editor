@@ -93,7 +93,7 @@ export default class BilateralFilter extends Component {
   };
 
   loadImage = evt => {
-    this.props.onSelectTool(''); // to unmount myself.
+    this.props.onSelectTool('');
     this.props.loadImage(evt.target.id);
   };
 

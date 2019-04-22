@@ -14,8 +14,7 @@ class Crop extends Component {
     this.imgHeight = props.imgHeight; // this.wasm_img.height();
 
     this.cropRegion = null;
-    this.state = {
-    }
+    this.state = { }
   }
 
   // no need to call wasm_img.discard_change(), because moving cropRegion(just a SVG) has no impact on wasm_img.

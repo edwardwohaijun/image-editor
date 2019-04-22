@@ -10,12 +10,7 @@ class ZoomRatio extends Component {
     };
   }
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
-  onResize = evt => {
-    this.props.setZoomRatio(evt.target.value);
-  };
+  onResize = evt => this.props.setZoomRatio(evt.target.value);
 
   setRatio = evt => {
     let zoomRatio = this.props.zoomRatio;

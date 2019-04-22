@@ -14,12 +14,10 @@ class Rotate extends Component {
     this.switched = false;
     this.op = {
       'rotate_counter_clockwise': () => {
-        // this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
         this.switched = !this.switched;
         this.wasm_img.rotate(false);
       },
       'rotate_clockwise': () => {
-        // this.props.setWidthHeight({width: props.imgHeight, height: props.imgWidth});
         this.switched = !this.switched;
         this.wasm_img.rotate(true);
       },

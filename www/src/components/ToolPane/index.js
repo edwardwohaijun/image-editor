@@ -11,7 +11,6 @@ class ToolPane extends Component {
     };
   }
 
-  componentDidMount = () => { };
   componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.selectedTool) { // restoring the img should move Accordion back to original position.
       this.accordion.style.transform = 'translate(0px, 0px)'

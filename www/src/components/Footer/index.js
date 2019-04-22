@@ -8,14 +8,6 @@ class Footer extends Component {
     };
   }
 
-  componentDidMount = () => {
-
-  };
-
-  componentDidUpdate = () => {
-
-  };
-
   render() {
     return (
         <div style={{display: 'flex', position: 'absolute', bottom: '0px', height: '44px', width: '100%', backgroundColor: '#373842'}}>

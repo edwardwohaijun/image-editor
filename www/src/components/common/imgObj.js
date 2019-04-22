@@ -13,7 +13,6 @@ let imgObj = (function() { // todo: bad naming
       return img;
     },
     imgBuff: null, // when scaling up/down an image, the img buffer(returned from getImageData()) is the same, I save it here for frequent access
-    // todo: 也不方便, 每次wasm中更新了, 如apply some filters, I need to remember to update this field.
   };
 })();
 

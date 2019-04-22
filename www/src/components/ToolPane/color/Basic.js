@@ -34,7 +34,6 @@ export default class Basic extends Component {
       this.props.redraw();
     }
   };
-  // shouldComponentUpdate = (nextProps, nextState) => { };
 
   onChange = evt => {
     let valueType = evt.target.dataset.valueType;
@@ -65,7 +64,6 @@ export default class Basic extends Component {
       let t = this.state.temperature * this.normalizeFactor.temperature;
       let g = this.state.grayscaled;
       let i = this.state.inverted;
-      // pub fn adjust_hsi(&mut self, hue_amt: f64, saturation_amt: f64, temperature_amt: i32, grayscaled: bool, inverted: bool) {...}
       this.wasm_img.adjust_hsi(h, s, t, g, i);
       this.props.redraw();
     });

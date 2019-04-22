@@ -13,7 +13,6 @@ export default class OpenImage extends Component {
   }
 
   toggleDropdown = () => this.setState({dropdownVisible: !this.state.dropdownVisible});
-  showDropdown = () => this.setState({dropdownVisible: true});
   hideDropdown = () => this.setState({dropdownVisible: false});
 
   componentDidMount = () => {
@@ -28,9 +27,7 @@ export default class OpenImage extends Component {
       }
     });
   };
-
-  componentDidUpdate = () => {};
-
+  
   // to allow to select the same file, otherwise onChange won't get triggered
   onFileClick = evt => evt.target.value = null;
   onFileChange = evt => {
@@ -73,21 +70,16 @@ export default class OpenImage extends Component {
                     </label>
                   </li>
                   <li className='clickable' onClick={this.toggleCameraModal}>Camera</li>
-                  <li>
-                    {/* invoke evt handler for the following input: pressing ENTER is the same as  */}
+                  {/*<li>
                     <input id='img-url' placeholder='Remote URL' onKeyUp={this.onKeyEnter}/>
                     <button className='primary-btn apply-btn' onClick={this.onGoToURL}
                             style={{color: '#ededed', marginLeft: '12px', height: '24px', width: '48px', fontSize: '15px'}}>Go</button>
-                  </li>
+                  </li>*/}
                   <li className='test-image clickable' id='/img/JusticeLeague/wonder-woman.jpg'>DC/wonder-woman</li>
                   <li className='test-image clickable' id='/img/Avengers/endgame.png'>Avengers/endgame</li>
-                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EmmaStone1.jpg'>Emma Stone 1 (remove freckles)</li>
-                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EmmaStone2.jpg'>Emma Stone 2 (remove freckles)</li>
-                  <li className='test-image clickable' id='/img/edgesPreservingDenoise/EddieRedmayne.jpg'>Eddie Redmayne (remove freckles)</li>
                   <li className='test-image clickable' id='/img/TrueBlood.jpg'>True Blood (temperature adjust)</li>
                   <li className='test-image clickable' id='/img/lowContrast/kitty.jpg'>Kitty (Low contrast)</li>
                   <li className='test-image clickable' id='/img/lowContrast/forest.jpg'>Forest (low contrast - too dark)</li>
-
                 </ul>
           }
           {this.state.openCamera ? <Selfie loadImage={this.props.loadImage} toggleCameraModal={this.toggleCameraModal}/> : null}

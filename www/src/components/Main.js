@@ -16,22 +16,12 @@ class Main extends Component {
     this.state = {
       selectedTool: null,
     };
-    // this.imgSrc = '/img/wonder-woman.jpg';
-    this.imgSrc = '/img/len_full.jpg';
-    // this.imgSrc = '/img/road.jpg';
-    //this.imgSrc = '/img/stairs.jpg';
-    // this.imgSrc = '/img/lake.jpg';
-    // this.imgSrc = '/img/true_blood_cold_temperature.jpg';
-    // this.imgSrc = '/img/endgame.png';
-    // this.imgSrc = '/img/cap.png';
-    // this.imgSrc = '/img/EddieRedmayne.jpg';
-    // this.imgSrc = '/img/miniaturize/constructionSite1.jpg'
-
+    this.imgSrc = '/img/endgame.jpg'
   }
 
   onSelectTool = id => this.setState({selectedTool: id});
 
-  resizeCanvas = autoFit => { // "autoShrink: true" fit canvas into container without scrollbar
+  resizeCanvas = autoFit => { // "autoFit: true" fit canvas into container without scrollbar
     let wasm_img = imgObj.get_wasm_img();
     let imgWidth = wasm_img.width();
     let imgHeight = wasm_img.height();

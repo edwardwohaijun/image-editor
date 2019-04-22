@@ -18,7 +18,7 @@ let initialState = {
       // I need to restore the img to original width/height by calling wasm_img.discard_change(), then redraw, both of which are expensive, \
       // By the time Crop component is loaded, Scale-to-original might not have finished yet.
       // But Crop component need img width/height immediately to set handler position, it might read the scaled-down width/height value
-      // So I just save the current width/height in redux for quick access.
+      // So I just save the current width/height in Redux for quick access.
 
       // size: 0,
     }),

@@ -7,11 +7,7 @@ export default class Restore extends Component { // restore to original state(th
     this.state = {}
   }
 
-  componentDidMount = () => {};
-  componentDidUpdate = () => {};
-  restore = () => {
-    this.props.loadImage();
-  };
+  restore = () => this.props.loadImage();
 
   render() {
     return (

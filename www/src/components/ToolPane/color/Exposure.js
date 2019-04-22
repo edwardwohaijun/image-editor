@@ -162,9 +162,6 @@ export default class Exposure extends Component {
 
           </div>
 
-          {/* highlight */}
-          {/* shadow */}
-
           <ApplyButton onApply={this.onApply}/>
 
         </div>

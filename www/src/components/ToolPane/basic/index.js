@@ -8,9 +8,6 @@ class BasicTool extends Component {
     super(props);
   }
 
-  componentDidMount = () => { };
-  componentDidUpdate = () => { };
-
   render() {
     return (
         <div>basic tool</div>

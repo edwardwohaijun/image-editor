@@ -27,10 +27,6 @@ class TransformTool extends Component {
     this.setState({selectedTool: toolID});
   };
 
-  componentDidMount = () => { };
-  componentDidUpdate = prevProps => { };
-  componentWillUnmount = () => { };
-
   render() {
     return (
         <div>
