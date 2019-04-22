@@ -3,7 +3,12 @@ import React, {Component} from "react";
 const VIDEO = 1;
 const CANVAS = -1; // when users are switching between canvas and video, just multiply this value by -1
 const NO_MEDIA = 0; // video not available yet(or error occurred),
-const FILTERS = ['NONE', 'invert', 'grayscale', 'saturate', 'sepia', 'blur', 'brightness', 'contrast', 'hue-rotate-Hulk', 'hue-rotate-Avatar', 'hue-rotate-Thanos'];
+const FILTERS = [
+  {label: 'NONE', f: ''}, {label: 'invert', f: 'invert(0.8)'}, {label: 'grayscale', f: 'grayscale(1)'},
+  {label: 'saturate', f: 'saturate(6)'}, {label: 'sepia', f: 'sepia(1)'}, {label: 'blur', f: 'blur(5px)'},
+  {label: 'brightness', f: 'brightness(5)'}, {label: 'contrast', f: 'contrast(5)'},
+  {label: 'hue-rotate-Hulk', f: 'hue-rotate(90deg)'}, {label: 'hue-rotate-Avatar', f: 'hue-rotate(180deg)'}, {label: 'hue-rotate-Thanos', f: 'hue-rotate(270deg)'},
+]; // these filters can be combined to create combo effects.
 
 export default class Selfie extends Component {
   constructor(props) {
@@ -13,7 +18,7 @@ export default class Selfie extends Component {
       videoDimension: {width: 800, height: 600},
       error: false,
       showFilterList: false,
-      activeFilter: FILTERS[0],
+      activeFilterIdx: 0,
     };
 
     this.flash = null;
@@ -44,7 +49,13 @@ export default class Selfie extends Component {
   };
 
   takeShot = () => {
-    this.canvas.getContext('2d').drawImage(this.video, 0, 0);
+    let ctx = this.canvas.getContext('2d');
+    let idx = this.state.activeFilterIdx;
+
+    if (typeof ctx.filter !== "undefined" && idx !== 0) {
+      ctx.filter = FILTERS[idx].f;
+    }
+    ctx.drawImage(this.video, 0, 0);
     if (this.state.currentMedia === VIDEO) { // this is to simulate the camera-like flash effect,
       this.toggleFlashCls()
     }
@@ -110,9 +121,10 @@ export default class Selfie extends Component {
   };
 
   selectFilter = evt => {
-    let idx= evt.target.dataset.filterIdx;
-    let activeFilter = FILTERS[idx];
-    this.setState({activeFilter})
+    this.setState({activeFilterIdx: parseInt(evt.target.dataset.filterIdx)})
+    // let idx= evt.target.dataset.filterIdx;
+    // let activeFilter = FILTERS[idx];
+    // this.setState({activeFilter})
   };
 
   toggleFilterList = evt => {
@@ -144,13 +156,13 @@ export default class Selfie extends Component {
                   <ErrorMsg />
                 </div>
               }
-              <video ref={v => this.video = v} className={this.state.activeFilter} autoPlay style={{zIndex: 15, position: 'absolute', top: 0}}/>
+              <video ref={v => this.video = v} style={{filter: FILTERS[this.state.activeFilterIdx].f, zIndex: 15, position: 'absolute', top: 0}} autoPlay />
               <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'}
                       ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
 
               <div style={{visibility: iconVisible, position: 'absolute', height: '48px', width: '50%', left: videoW/4 + 'px', bottom: '0', backgroundColor: 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: '20'}}>
-                <FilterIcon selectFilter={this.selectFilter} currentMedia={this.state.currentMedia} activeFilter={this.state.activeFilter}
+                <FilterIcon selectFilter={this.selectFilter} currentMedia={this.state.currentMedia} activeFilterIdx={this.state.activeFilterIdx}
                             showFilterList={this.state.showFilterList} toggleFilterList={this.toggleFilterList}/>
                 <CameraIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
                 <OkIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
@@ -207,7 +219,7 @@ const FilterIcon = props => {
             <path fill="#FFF" stroke="none" d="M11.51 16.7l.54 1.46a.14.14 0 0 0 .26 0l.54-1.46a4.31 4.31 0 0 1 2.55-2.55l1.47-.54a.15.15 0 0 0 .09-.13.16.16 0 0 0-.09-.14l-1.47-.54a4.31 4.31 0 0 1-2.55-2.55l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.3 4.3 0 0 1-2.56 2.55l-1.46.54a.16.16 0 0 0-.09.14.15.15 0 0 0 .09.13l1.46.54a4.3 4.3 0 0 1 2.56 2.55zM23.37 22.88l-1.47-.54a4.33 4.33 0 0 1-2.55-2.56l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.33 4.33 0 0 1-2.55 2.56l-1.47.54a.14.14 0 0 0 0 .26l1.47.54a4.34 4.34 0 0 1 2.55 2.55l.57 1.47a.14.14 0 0 0 .26 0l.54-1.47a4.34 4.34 0 0 1 2.55-2.55l1.47-.54a.14.14 0 0 0 0-.26zM30.94 16.62l-1-.36a2.94 2.94 0 0 1-1.73-1.74l-.37-1a.1.1 0 0 0-.09-.07.11.11 0 0 0-.09.07l-.36 1a3 3 0 0 1-1.74 1.74l-1 .36a.11.11 0 0 0-.07.09.1.1 0 0 0 .07.09l1 .37a2.94 2.94 0 0 1 1.74 1.73l.36 1a.11.11 0 0 0 .09.06.1.1 0 0 0 .09-.06l.37-1a2.9 2.9 0 0 1 1.73-1.73l1-.37a.1.1 0 0 0 .06-.09.11.11 0 0 0-.06-.09zM28.58 29.71l-.69-.26a2 2 0 0 1-1.21-1.21l-.26-.69a.06.06 0 0 0-.06-.05.06.06 0 0 0-.06.05l-.26.69a2.06 2.06 0 0 1-1.26 1.26l-.69.26a.06.06 0 0 0 0 .12l.69.26a2 2 0 0 1 1.21 1.21l.26.69a.06.06 0 0 0 .06 0 .06.06 0 0 0 .06 0l.26-.69a2 2 0 0 1 1.21-1.21l.69-.26a.07.07 0 0 0 0-.12zM23.42 9.77l-.7-.25a2.06 2.06 0 0 1-1.21-1.21l-.25-.7a.08.08 0 0 0-.07 0 .08.08 0 0 0-.06 0l-.25.7a2.05 2.05 0 0 1-1.22 1.19l-.69.25a.08.08 0 0 0 0 .06.08.08 0 0 0 0 .07l.69.25a2.05 2.05 0 0 1 1.22 1.21l.25.7a.08.08 0 0 0 .06 0 .08.08 0 0 0 .07 0l.25-.7a2.06 2.06 0 0 1 1.21-1.21l.7-.25a.08.08 0 0 0 0-.06.08.08 0 0 0 0-.05zM14.91 28.28l-.87-.32a2.57 2.57 0 0 1-1.52-1.52l-.33-.87a.07.07 0 0 0-.07-.06.08.08 0 0 0-.08.06l-.32.87a2.58 2.58 0 0 1-1.53 1.52l-.87.32a.09.09 0 0 0 0 .08.08.08 0 0 0 0 .08l.87.32a2.58 2.58 0 0 1 1.53 1.52l.32.88a.08.08 0 0 0 .08.05.08.08 0 0 0 .07-.05l.33-.88a2.57 2.57 0 0 1 1.52-1.52l.87-.32a.09.09 0 0 0 .06-.08.1.1 0 0 0-.06-.08z"/>
           </svg>
         </button>
-        {!props.showFilterList ? null : <FilterList selectFilter={props.selectFilter} activeFilter={props.activeFilter}/>}
+        {!props.showFilterList ? null : <FilterList selectFilter={props.selectFilter} activeFilterIdx={props.activeFilterIdx}/>}
       </div>
   )};
 
@@ -215,8 +227,8 @@ const FilterList = props => {
   return (
       <ul onClick={props.selectFilter} className='dropdown-menu video-filter-list' style={{bottom: '32px', width: '168px', top: 'unset', left: 'unset'}}>
         {FILTERS.map((f, idx) =>
-            <li key={idx} data-filter-idx={idx} className={'clickable ' + (f === props.activeFilter ? 'active' : '')}>
-              <span data-filter-idx={idx}>{f}</span>
+            <li key={idx} data-filter-idx={idx} className={'clickable ' + (idx === props.activeFilterIdx ? 'active' : '')}>
+              <span data-filter-idx={idx}>{f.label}</span>
             </li>
         )}
       </ul>
