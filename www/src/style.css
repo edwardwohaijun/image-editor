@@ -116,6 +116,43 @@ a {
     50%, 75%, 100% {opacity: 0}
 }
 
+.NONE {}
+.invert {
+    filter: invert(0.8);
+}
+.grayscale {
+    filter: grayscale(1);
+}
+.saturate {
+    filter: saturate(6);
+}
+.sepia {
+    filter: sepia(1);
+}
+.blur {
+    filter: blur(5px);
+}
+.brightness {
+    filter: brightness(5);
+}
+.contrast {
+    filter: contrast(8);
+}
+.hue-rotate-Hulk {
+    filter: hue-rotate(90deg);
+}
+.hue-rotate-Avatar {
+    filter: hue-rotate(180deg);
+}
+.hue-rotate-Thanos {
+    filter: hue-rotate(270deg);
+}
+.filter-list {
+  list-style: none;
+}
+
+
+
 .tool-icon {
     display: block;
     width: 56px;
@@ -198,16 +235,6 @@ http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.htm
     outline: none;
 }
 
-/*
-.open-img-file-wrapper input {
-    width: 0.1px;
-	height: 0.1px;
-	opacity: 0;
-	overflow: hidden;
-	position: absolute;
-	z-index: -1;
-}
-*/
 .clickable {
     cursor: pointer;
 }
@@ -227,6 +254,9 @@ http://brennaobrien.com/blog/2014/05/style-input-type-range-in-every-browser.htm
 }
 .dropdown-menu li {
     margin: 16px;
+}
+.dropdown-menu li.active {
+    color: #387dcd;
 }
 .dropdown-menu #img-url:focus {
     outline: none;

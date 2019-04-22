@@ -3,6 +3,8 @@ import React, {Component} from "react";
 const VIDEO = 1;
 const CANVAS = -1; // when users are switching between canvas and video, just multiply this value by -1
 const NO_MEDIA = 0; // video not available yet(or error occurred),
+const FILTERS = ['NONE', 'invert', 'grayscale', 'saturate', 'sepia', 'blur', 'brightness', 'contrast', 'hue-rotate-Hulk', 'hue-rotate-Avatar', 'hue-rotate-Thanos'];
+
 export default class Selfie extends Component {
   constructor(props) {
     super(props);
@@ -10,7 +12,8 @@ export default class Selfie extends Component {
       currentMedia: NO_MEDIA,
       videoDimension: {width: 800, height: 600},
       error: false,
-      showFilter: false,
+      showFilterList: false,
+      activeFilter: FILTERS[0],
     };
 
     this.flash = null;
@@ -29,7 +32,6 @@ export default class Selfie extends Component {
       'btn-take-shot': this.takeShot,
       'btn-confirm-shot': this.confirmShot,
       'btn-close-camera': this.closeCamera,
-      'btn-filter-shot': this.applyFilter,
     }
   }
 
@@ -54,10 +56,6 @@ export default class Selfie extends Component {
       this.props.loadImage(blob);
       this.closeCamera()
     }, 'image/png');
-  };
-
-  applyFilter = () => {
-    console.log("filter")
   };
 
   closeCamera = () => {
@@ -97,14 +95,33 @@ export default class Selfie extends Component {
           this.setState({error: true})
         });
 
-    this.flash.addEventListener("animationend", this.toggleFlashCls)
+    this.flash.addEventListener("animationend", this.toggleFlashCls);
+    document.addEventListener('click', this.toggleFilterList)
   };
 
-  componentWillUnmount = () => this.flash.removeEventListener("animationend", this.toggleFlashCls);
+  componentWillUnmount = () => {
+    this.flash.removeEventListener("animationend", this.toggleFlashCls);
+    document.removeEventListener('click', this.toggleFilterList)
+  };
 
   onClick = evt => {
     let btnID = evt.target.id;
     this.op[btnID]()
+  };
+
+  selectFilter = evt => {
+    let idx= evt.target.dataset.filterIdx;
+    let activeFilter = FILTERS[idx];
+    this.setState({activeFilter})
+  };
+
+  toggleFilterList = evt => {
+    let filterWrapper = evt.target.closest('#video-filter-wrapper');
+    if (!filterWrapper && this.state.showFilterList) { // click evt happened outside the filterList, close it if opened
+      this.setState({showFilterList: false});
+    } else if (filterWrapper) {
+      this.setState({showFilterList: !this.state.showFilterList});
+    }
   };
 
   render() {
@@ -127,13 +144,14 @@ export default class Selfie extends Component {
                   <ErrorMsg />
                 </div>
               }
-              <video ref={v => this.video = v} autoPlay style={{zIndex: 15, position: 'absolute', top: 0}}/>
+              <video ref={v => this.video = v} className={this.state.activeFilter} autoPlay style={{zIndex: 15, position: 'absolute', top: 0}}/>
               <canvas id='camera-canvas' width={videoW + 'px'} height={videoH + 'px'}
                       ref={c => this.canvas = c} style={{zIndex: 10, position: 'absolute', top: 0}}/>
 
               <div style={{visibility: iconVisible, position: 'absolute', height: '48px', width: '50%', left: videoW/4 + 'px', bottom: '0', backgroundColor: 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: '20'}}>
-                <FilterIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
+                <FilterIcon selectFilter={this.selectFilter} currentMedia={this.state.currentMedia} activeFilter={this.state.activeFilter}
+                            showFilterList={this.state.showFilterList} toggleFilterList={this.toggleFilterList}/>
                 <CameraIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
                 <OkIcon onClick={this.onClick} currentMedia={this.state.currentMedia}/>
               </div>
@@ -182,20 +200,25 @@ const FilterIcon = props => {
   let disabled = (m !== VIDEO);
   let cls = 'camera-action ' + (disabled ? 'disabled' : '');
   return (
-    <button id='btn-filter-shot' className={cls} onClick={props.onClick} disabled={disabled}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="37.56" height="37.56" pointerEvents='none'>
-          <circle cx="18.78" cy="18.78" r="18.28" stroke="none" fill="#387DCD"/>
-          <path fill="#FFF" stroke="none" d="M11.51 16.7l.54 1.46a.14.14 0 0 0 .26 0l.54-1.46a4.31 4.31 0 0 1 2.55-2.55l1.47-.54a.15.15 0 0 0 .09-.13.16.16 0 0 0-.09-.14l-1.47-.54a4.31 4.31 0 0 1-2.55-2.55l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.3 4.3 0 0 1-2.56 2.55l-1.46.54a.16.16 0 0 0-.09.14.15.15 0 0 0 .09.13l1.46.54a4.3 4.3 0 0 1 2.56 2.55zM23.37 22.88l-1.47-.54a4.33 4.33 0 0 1-2.55-2.56l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.33 4.33 0 0 1-2.55 2.56l-1.47.54a.14.14 0 0 0 0 .26l1.47.54a4.34 4.34 0 0 1 2.55 2.55l.57 1.47a.14.14 0 0 0 .26 0l.54-1.47a4.34 4.34 0 0 1 2.55-2.55l1.47-.54a.14.14 0 0 0 0-.26zM30.94 16.62l-1-.36a2.94 2.94 0 0 1-1.73-1.74l-.37-1a.1.1 0 0 0-.09-.07.11.11 0 0 0-.09.07l-.36 1a3 3 0 0 1-1.74 1.74l-1 .36a.11.11 0 0 0-.07.09.1.1 0 0 0 .07.09l1 .37a2.94 2.94 0 0 1 1.74 1.73l.36 1a.11.11 0 0 0 .09.06.1.1 0 0 0 .09-.06l.37-1a2.9 2.9 0 0 1 1.73-1.73l1-.37a.1.1 0 0 0 .06-.09.11.11 0 0 0-.06-.09zM28.58 29.71l-.69-.26a2 2 0 0 1-1.21-1.21l-.26-.69a.06.06 0 0 0-.06-.05.06.06 0 0 0-.06.05l-.26.69a2.06 2.06 0 0 1-1.26 1.26l-.69.26a.06.06 0 0 0 0 .12l.69.26a2 2 0 0 1 1.21 1.21l.26.69a.06.06 0 0 0 .06 0 .06.06 0 0 0 .06 0l.26-.69a2 2 0 0 1 1.21-1.21l.69-.26a.07.07 0 0 0 0-.12zM23.42 9.77l-.7-.25a2.06 2.06 0 0 1-1.21-1.21l-.25-.7a.08.08 0 0 0-.07 0 .08.08 0 0 0-.06 0l-.25.7a2.05 2.05 0 0 1-1.22 1.19l-.69.25a.08.08 0 0 0 0 .06.08.08 0 0 0 0 .07l.69.25a2.05 2.05 0 0 1 1.22 1.21l.25.7a.08.08 0 0 0 .06 0 .08.08 0 0 0 .07 0l.25-.7a2.06 2.06 0 0 1 1.21-1.21l.7-.25a.08.08 0 0 0 0-.06.08.08 0 0 0 0-.05zM14.91 28.28l-.87-.32a2.57 2.57 0 0 1-1.52-1.52l-.33-.87a.07.07 0 0 0-.07-.06.08.08 0 0 0-.08.06l-.32.87a2.58 2.58 0 0 1-1.53 1.52l-.87.32a.09.09 0 0 0 0 .08.08.08 0 0 0 0 .08l.87.32a2.58 2.58 0 0 1 1.53 1.52l.32.88a.08.08 0 0 0 .08.05.08.08 0 0 0 .07-.05l.33-.88a2.57 2.57 0 0 1 1.52-1.52l.87-.32a.09.09 0 0 0 .06-.08.1.1 0 0 0-.06-.08z"/>
-        </svg>
-      </button>
+      <div id='video-filter-wrapper'>
+        <button className={cls} disabled={disabled}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="37.56" height="37.56" pointerEvents='none'>
+            <circle cx="18.78" cy="18.78" r="18.28" stroke="none" fill="#387DCD"/>
+            <path fill="#FFF" stroke="none" d="M11.51 16.7l.54 1.46a.14.14 0 0 0 .26 0l.54-1.46a4.31 4.31 0 0 1 2.55-2.55l1.47-.54a.15.15 0 0 0 .09-.13.16.16 0 0 0-.09-.14l-1.47-.54a4.31 4.31 0 0 1-2.55-2.55l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.3 4.3 0 0 1-2.56 2.55l-1.46.54a.16.16 0 0 0-.09.14.15.15 0 0 0 .09.13l1.46.54a4.3 4.3 0 0 1 2.56 2.55zM23.37 22.88l-1.47-.54a4.33 4.33 0 0 1-2.55-2.56l-.54-1.46a.14.14 0 0 0-.26 0l-.54 1.46a4.33 4.33 0 0 1-2.55 2.56l-1.47.54a.14.14 0 0 0 0 .26l1.47.54a4.34 4.34 0 0 1 2.55 2.55l.57 1.47a.14.14 0 0 0 .26 0l.54-1.47a4.34 4.34 0 0 1 2.55-2.55l1.47-.54a.14.14 0 0 0 0-.26zM30.94 16.62l-1-.36a2.94 2.94 0 0 1-1.73-1.74l-.37-1a.1.1 0 0 0-.09-.07.11.11 0 0 0-.09.07l-.36 1a3 3 0 0 1-1.74 1.74l-1 .36a.11.11 0 0 0-.07.09.1.1 0 0 0 .07.09l1 .37a2.94 2.94 0 0 1 1.74 1.73l.36 1a.11.11 0 0 0 .09.06.1.1 0 0 0 .09-.06l.37-1a2.9 2.9 0 0 1 1.73-1.73l1-.37a.1.1 0 0 0 .06-.09.11.11 0 0 0-.06-.09zM28.58 29.71l-.69-.26a2 2 0 0 1-1.21-1.21l-.26-.69a.06.06 0 0 0-.06-.05.06.06 0 0 0-.06.05l-.26.69a2.06 2.06 0 0 1-1.26 1.26l-.69.26a.06.06 0 0 0 0 .12l.69.26a2 2 0 0 1 1.21 1.21l.26.69a.06.06 0 0 0 .06 0 .06.06 0 0 0 .06 0l.26-.69a2 2 0 0 1 1.21-1.21l.69-.26a.07.07 0 0 0 0-.12zM23.42 9.77l-.7-.25a2.06 2.06 0 0 1-1.21-1.21l-.25-.7a.08.08 0 0 0-.07 0 .08.08 0 0 0-.06 0l-.25.7a2.05 2.05 0 0 1-1.22 1.19l-.69.25a.08.08 0 0 0 0 .06.08.08 0 0 0 0 .07l.69.25a2.05 2.05 0 0 1 1.22 1.21l.25.7a.08.08 0 0 0 .06 0 .08.08 0 0 0 .07 0l.25-.7a2.06 2.06 0 0 1 1.21-1.21l.7-.25a.08.08 0 0 0 0-.06.08.08 0 0 0 0-.05zM14.91 28.28l-.87-.32a2.57 2.57 0 0 1-1.52-1.52l-.33-.87a.07.07 0 0 0-.07-.06.08.08 0 0 0-.08.06l-.32.87a2.58 2.58 0 0 1-1.53 1.52l-.87.32a.09.09 0 0 0 0 .08.08.08 0 0 0 0 .08l.87.32a2.58 2.58 0 0 1 1.53 1.52l.32.88a.08.08 0 0 0 .08.05.08.08 0 0 0 .07-.05l.33-.88a2.57 2.57 0 0 1 1.52-1.52l.87-.32a.09.09 0 0 0 .06-.08.1.1 0 0 0-.06-.08z"/>
+          </svg>
+        </button>
+        {!props.showFilterList ? null : <FilterList selectFilter={props.selectFilter} activeFilter={props.activeFilter}/>}
+      </div>
   )};
 
 const FilterList = props => {
   return (
-      <ul>
-        <li>
-          
-        </li>
+      <ul onClick={props.selectFilter} className='dropdown-menu video-filter-list' style={{bottom: '32px', width: '168px', top: 'unset', left: 'unset'}}>
+        {FILTERS.map((f, idx) =>
+            <li key={idx} data-filter-idx={idx} className={'clickable ' + (f === props.activeFilter ? 'active' : '')}>
+              <span data-filter-idx={idx}>{f}</span>
+            </li>
+        )}
       </ul>
   )
 };
@@ -204,7 +227,8 @@ const ErrorMsg = () =>
     <div>
       <h1>Possible reasons for this error</h1>
       <ul>
-        <li>Your browser is too old, please use latest version of Chrome or Firefox.</li>
+        <li>Your browser is too old, please use latest version of <a target='_blank' href='https://www.google.com/chrome/'>Chrome</a>
+           or <a target='_blank' href='https://www.mozilla.org/en-US/firefox/new/'>Firefox</a>.</li>
         <li>You don't have any cameras plugged in.</li>
         <li>You need to grant permission to use your camera, like the following screenshot shows:</li>
       </ul>
