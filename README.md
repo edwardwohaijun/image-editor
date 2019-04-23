@@ -1,17 +1,17 @@
 # Introduction
 This app is the result of my learning experience of Rust, WebAssembly and image processing
-(I have deployed it on my personal server, [go](http://worksphere.cn/image-editor) check it out), 
+(I have deployed it on my personal server, [go check it out](http://worksphere.cn/image-editor)), 
 but I am planning to make it a long-term project, and finally, turn it into a full-featured app.
 With the release of draft spec in 2017, WebAssembly seems to be a good fit for the technical requirement of this kind of app.
 
 There are still many known bugs, and rooms for improvements. For example, "Filter -> Smoothen" is implemented with naive "Bilateral Filter", 
-which is way too slow(takes about 10 seconds for a medium-size image). 
+which is way too slow(takes more than 10 seconds for a medium-size image). 
 Some operations can be performed in JavaScript in a more efficient way,
 but for the sake of learning, I still implement them in Rust.
 
 # Installation
 ## Prerequisites
-Upgrade npm, install Rust and wasm-pack(a one-stop shop for building and working with rust- generated WebAssembly that you would like to interop with JavaScript).
+Upgrade npm, install Rust and wasm-pack(a one-stop shop for building and working with Rust-generated WebAssembly that you would like to interop with JavaScript).
 
 ```bash
 npm install npm@latest -g
@@ -38,12 +38,12 @@ note:
 * if you want to run this app with a dedicated HTTP server, like Apache. 
 You need to add the following MIME-type in `/etc/mime.types`. 
 For Nginx, you need to add this in `/etc/nginx/mime.type` as well. 
-then restart HTTP server.
+Then restart HTTP server.
 ```
 application/wasm         wasm
 ```
 
-* if you want to run this app on a non-localhost server, you need to run on HTTPS(self-signed TLS certificate is OK)
+* Images can be captured from your camera, which requires HTTPS for non-localhost server(self-signed TLS certificate is OK).
 
 # Feature
 ## Transform
@@ -71,8 +71,6 @@ There are two parameters controlling the smoothing result, when they both approa
 
 Note: the implementation of Bilateral filter algorithm behind this effect is very low efficient,
 takes about +10s to finish.
-
-Images can come from your computer or read from webcam, you can take a selfie, then apply the cartoonish effect. 
 
 ## License
 
