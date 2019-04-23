@@ -69,9 +69,10 @@ Here is the image before/after applying the smoothing effect:
 There are two parameters controlling the smoothing result, when they both approach max value, it'll create a cartoonish feel, like this:
 ![cartoonish Gal Gadot](https://raw.githubusercontent.com/edwardwohaijun/image-editor/master/cartoonish_effect.jpg)
 
-Note: the implementation of Bilateral filter algorithm behind this effect is very low efficient,
-takes about +10s to finish.
+Note: the implementation of Bilateral Filter algorithm behind this effect is very low efficient,
+the more smooth and bigger the image, the longer time it'd take, for cartoonish effect, it might take 2 MINUTES to finish.
+
 
 ## License
 
-This project is licensed under the [MIT](https://github.com/edwardwohaijun/image-editor/blob/master/LICENSE)
+This project is licensed under [MIT](https://github.com/edwardwohaijun/image-editor/blob/master/LICENSE)
