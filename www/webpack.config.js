@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require('path');
 
@@ -55,6 +56,10 @@ module.exports = {
     ]
   },
   plugins: [
+    new webpack.DefinePlugin({
+      PRODUCTION: JSON.stringify(true),
+      URL_PATH: JSON.stringify('')
+    }),
     new CopyWebpackPlugin(['index.html'])
   ],
 };

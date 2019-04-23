@@ -244,5 +244,5 @@ const ErrorMsg = () =>
         <li>You don't have any cameras plugged in.</li>
         <li>You need to grant permission to use your camera, like the following screenshot shows:</li>
       </ul>
-      <img src='/img/permissionDialog.jpg'/>
+      <img src={`${URL_PATH}/img/permissionDialog.jpg`}/>
     </div>;

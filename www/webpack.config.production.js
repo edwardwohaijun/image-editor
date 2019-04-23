@@ -1,4 +1,5 @@
 //const CopyWebpackPlugin = require("copy-webpack-plugin");
+const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
@@ -46,6 +47,9 @@ module.exports = {
   },
 
   plugins: [
-
+    new webpack.DefinePlugin({
+      PRODUCTION: JSON.stringify(true),
+      URL_PATH: JSON.stringify('/image-editor')
+    })
   ],
 };

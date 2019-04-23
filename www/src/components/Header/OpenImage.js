@@ -74,11 +74,11 @@ export default class OpenImage extends Component {
                     <button className='primary-btn apply-btn' onClick={this.onGoToURL}
                             style={{color: '#ededed', marginLeft: '12px', height: '24px', width: '48px', fontSize: '15px'}}>Go</button>
                   </li>*/}
-                  <li className='test-image clickable' id='/img/wonder-woman.jpg'>wonder-woman</li>
-                  <li className='test-image clickable' id='/img/endgame.jpg'>Avengers: endgame</li>
-                  <li className='test-image clickable' id='/img/TrueBlood.jpg'>True Blood (temperature adjust)</li>
-                  <li className='test-image clickable' id='/img/kitty.jpg'>Kitty (Low contrast - too bright)</li>
-                  <li className='test-image clickable' id='/img/forest.jpg'>Forest (low contrast - too dark)</li>
+                  <li className='test-image clickable' id={`${URL_PATH}/img/wonder-woman.jpg`}>wonder-woman</li>
+                  <li className='test-image clickable' id={`${URL_PATH}/img/endgame.jpg`}>Avengers: endgame</li>
+                  <li className='test-image clickable' id={`${URL_PATH}/img/TrueBlood.jpg`}>True Blood (temperature adjust)</li>
+                  <li className='test-image clickable' id={`${URL_PATH}/img/kitty.jpg`}>Kitty (Low contrast - too bright)</li>
+                  <li className='test-image clickable' id={`${URL_PATH}/img/forest.jpg`}>Forest (low contrast - too dark)</li>
                 </ul>
           }
           {this.state.openCamera ? <Selfie loadImage={this.props.loadImage} toggleCameraModal={this.toggleCameraModal}/> : null}
