@@ -1,51 +1,80 @@
-# `create-wasm-app`
+# Introduction
+This app is the result of my learning experience of Rust, WebAssembly and image processing
+(I have deployed it on my personal server, [go](http://worksphere.cn/image-editor) check it out), 
+but I am planning to make it a long-term project, and finally, turn it into a full-featured app.
+With the release of draft spec in 2017, WebAssembly seems to be a good fit for the technical requirement of this kind of app.
 
-> An `npm init` template for kick starting a project that uses NPM packages
-> containing Rust-generated WebAssembly and bundles them with Webpack.
+There are still many known bugs, and rooms for improvements. For example, "Filter -> Smoothen" is implemented with naive "Bilateral Filter", 
+which is way too slow(takes about 10 seconds for a medium-size image). 
+Some operations can be performed in JavaScript in a more efficient way,
+but for the sake of learning, I still implement them in Rust.
 
-This template is designed for depending on NPM packages that contain
-Rust-generated WebAssembly and using them to create a Website.
+# Installation
+## Prerequisites
+Upgrade npm, install Rust and wasm-pack(a one-stop shop for building and working with rust- generated WebAssembly that you would like to interop with JavaScript).
 
-* Want to create an NPM package with Rust and WebAssembly? [Check out
-  `wasm-pack-template`.](https://github.com/rustwasm/wasm-pack-template)
-* Want to make a monorepo-style Website without publishing to NPM? Check out
-  [`rust-webpack-template`](https://github.com/rustwasm/rust-webpack-template)
-  and/or
-  [`rust-parcel-template`](https://github.com/rustwasm/rust-parcel-template).
-
-## 🚴 Usage
-
+```bash
+npm install npm@latest -g
+curl https://sh.rustup.rs -sSf | sh
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 ```
-npm init wasm-app
+
+## Install
+```bash
+git clone https://github.com/edwardwohaijun/image-editor
+cd image-editor
+wasm-pack build
+cd www
+npm install
+cd ../pkg
+npm link
+cd ../www
+npm link image-editor
+npm run start
+```
+open Chrome and go to `http://localhost:8080/image-editor`
+
+note: 
+* if you want to run this app with a dedicated HTTP server, like Apache. 
+You need to add the following MIME-type in `/etc/mime.types`. 
+For Nginx, you need to add this in `/etc/nginx/mime.type` as well. 
+then restart HTTP server.
+```
+application/wasm         wasm
 ```
 
-## 🔋 Batteries Included
+* if you want to run this app on a non-localhost server, you need to run on HTTPS(self-signed TLS certificate is OK)
 
-- `.gitignore`: ignores `node_modules`
-- `LICENSE-APACHE` and `LICENSE-MIT`: most Rust projects are licensed this way, so these are included for you
-- `README.md`: the file you are reading now!
-- `index.html`: a bare bones html document that includes the webpack bundle
-- `index.js`: example js file with a comment showing how to import and use a wasm pkg
-- `package.json` and `package-lock.json`:
-  - pulls in devDependencies for using webpack:
-      - [`webpack`](https://www.npmjs.com/package/webpack)
-      - [`webpack-cli`](https://www.npmjs.com/package/webpack-cli)
-      - [`webpack-dev-server`](https://www.npmjs.com/package/webpack-dev-server)
-  - defines a `start` script to run `webpack-dev-server`
-- `webpack.config.js`: configuration file for bundling your js with webpack
+# Feature
+## Transform
+* Crop
+* Rotate(±90deg only)
+* Scale(Linear interpolation)
+
+## Color
+* Black & White
+* Invert
+* HSI adjust
+* Contrast & Brightness adjust
+
+## Filter
+* Pixelate(Mosaic or Blur)
+* Blur(Gaussian blur)
+* Miniaturize
+* Smoothen(Bilateral filter under the hood)
+
+https://github.com/edwardwohaijun/image-editor/blob/master/smoothing_effect.jpg
+
+Here is the image before/after applying the smoothing effect:
+![smoothed Eddie Redmayne](https://raw.githubusercontent.com/edwardwohaijun/image-editor/master/smoothing_effect.jpg)
+
+There are two parameters controlling the smoothing result, when they both approach max value, it'll create a cartoonish feel, like this:
+![cartoonish Gal Gadot](https://raw.githubusercontent.com/edwardwohaijun/image-editor/master/cartoonish_effect.jpg)
+Note: the implementation of Bilateral filter algorithm behind this effect is very low efficient,
+takes about +10s to finish.
+
+Images can come from your computer or read from webcam, you can take a selfie, then apply the cartoonish effect. 
 
 ## License
 
-Licensed under either of
-
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.
+This project is licensed under the [MIT](https://github.com/edwardwohaijun/image-editor/blob/master/LICENSE)
