@@ -41,7 +41,21 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
     this.props.setMiniHeights({top: y, bottom: this.props.imgHeight - (y + height)});
   };
 
-  componentDidMount = () => this.setMiniRegion();
+  noGhosting = evt => evt.preventDefault();
+  componentDidMount = () => {
+    this.setMiniRegion();
+
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].addEventListener('mousedown', this.noGhosting)
+    }
+  };
+  componentWillUnmount = () => {
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].removeEventListener('mousedown', this.noGhosting)
+    }
+  };
 
   componentDidUpdate = prevProps => {
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;
@@ -153,6 +167,10 @@ class MiniHandlers extends Component { // it should be named "MiniaturizeHandler
     this.handlerMovingY = y;
     this.setPosition();
   };
+
+  // handler is represented as a dot img, this fn is to prevent the underlying img from capturing the mouseDown when dragging,\
+  // in Firefox, when the dot img is being dragged, the drag would create a ghost of image, Chrome don't have this phenomenon
+  onHandlerDown = evt => evt.preventDefault();
 
   render() {
     let canvasLeft = this.canvas.style.left;

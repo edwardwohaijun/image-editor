@@ -40,7 +40,21 @@ class PixelateHandlers extends Component {
     this.props.setPixelateHandlersPosition({x, y, width, height});
   };
 
-  componentDidMount = () => this.setPixelateRegion();
+  noGhosting = evt => evt.preventDefault();
+  componentDidMount = () => {
+    this.setPixelateRegion();
+
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].addEventListener('mousedown', this.noGhosting)
+    }
+  };
+  componentWillUnmount = () => {
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].removeEventListener('mousedown', this.noGhosting)
+    }
+  };
 
   componentDidUpdate = prevProps => { // after rounding, the final x/y/w/h might exceed boundary, I leave it to Pixelate component to handle
     let resizeRatio = this.props.zoomRatio / prevProps.zoomRatio;

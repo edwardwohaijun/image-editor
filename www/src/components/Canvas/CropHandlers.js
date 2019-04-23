@@ -53,8 +53,26 @@ class CropHandlers extends Component {
     y.innerText = Math.round((this.handlerY - 9) / ratio);
   };
 
+  // there are 8 small blue dot img handlers for users to click and drag,\
+  // without this fn, dragging will create a ghost image,\
+  // Chrome don't have ghosting, but FF does
+  // many solutions exist, https://stackoverflow.com/questions/7439042/css-js-to-prevent-dragging-of-ghost-image
+  noGhosting = evt => evt.preventDefault();
+
   componentDidMount = () => {
     this.cropRegionInfo = document.getElementById('crop-region-info');
+
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].addEventListener('mousedown', this.noGhosting)
+    }
+  };
+
+  componentWillUnmount = () => {
+    let imgHandlers = this.svg.getElementsByTagName('image');
+    for(let i = 0; i < imgHandlers.length; i++) {
+      imgHandlers[i].removeEventListener('mousedown', this.noGhosting)
+    }
   };
 
   componentDidUpdate = prevProps => { // todo: after rounding, the final x/y/w/h might exceed boundary
@@ -230,7 +248,6 @@ class CropHandlers extends Component {
   };
 
   render() {
-
     let width = this.handlerWidth; // this.canvasBbox.width;
     let height = this.handlerHeight; // this.canvasBbox.height;
 

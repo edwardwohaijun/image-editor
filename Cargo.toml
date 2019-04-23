@@ -2,6 +2,9 @@
 name = "image-editor"
 version = "0.1.0"
 authors = ["Edward Wo <edward.wo823@gmail.com>"]
+description = "A simple image processing library serves as WebAssembly module."
+repository = "https://github.com/edwardwohaijun/image-editor"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
