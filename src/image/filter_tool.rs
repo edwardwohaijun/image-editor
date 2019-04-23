@@ -7,7 +7,6 @@ use wasm_bindgen::prelude::*;
 use super::Image;
 use super::Operation;
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
@@ -125,46 +124,6 @@ impl Image {
             _ => {return;}
         }
     }
-
-    // after applying miniaturizing, there is a noticeable line between blurred and unblurred part,\
-    // the following failed attempt tries to smoothen out the line.
-    /*
-    pub fn blur_test(&mut self, sigma: f64) {
-        let img_width = self.width;
-        let img_height = self.height;
-
-        let mut mask_src = vec![0_u8; (img_width * img_height) as usize];
-        let start_height = (img_height as f64 / 3.0).round() as u32;
-        let end_height = (img_height as f64 * 2.0 / 3.0).round() as u32;
-        for row in start_height..end_height {
-            for col in 0..img_width {
-                let idx = (row * img_width + col) as usize;
-                mask_src[idx] = 255;
-            }
-        }
-
-        let mut mask_tgt = vec![0_u8; (img_width * img_height) as usize];
-        let num_pass = 5; // 3 passes is a good balance between Gaussian approximation and computation
-        let box_size = self.box_for_gaussian(sigma * 3.5, num_pass);
-
-        for idx in 0..num_pass {
-            self.box_blur_h(&mask_src, &mut mask_tgt, img_width, img_height, box_size[idx as usize] / 2);
-            self.box_blur_v(&mask_tgt, &mut mask_src, img_width, img_height,box_size[idx as usize] / 2);
-        }
-
-        self.blur(sigma);
-        for row in 0..img_height {
-            for col in 0..img_width {
-                let idx = (row * img_width + col) as usize;
-                let blur_ratio = mask_src[idx] as f64 / 255.0;
-                self.pixels[idx * 4 + 0] = (self.pixels_bk[idx * 4 + 0] as f64 * blur_ratio + self.pixels[idx * 4 + 0] as f64 * (1.0 - blur_ratio)).round() as u8;
-                self.pixels[idx * 4 + 1] = (self.pixels_bk[idx * 4 + 1] as f64 * blur_ratio + self.pixels[idx * 4 + 1] as f64 * (1.0 - blur_ratio)).round() as u8;
-                self.pixels[idx * 4 + 2] = (self.pixels_bk[idx * 4 + 2] as f64 * blur_ratio + self.pixels[idx * 4 + 2] as f64 * (1.0 - blur_ratio)).round() as u8;
-                self.pixels[idx * 4 + 3] = (self.pixels_bk[idx * 4 + 3] as f64 * blur_ratio + self.pixels[idx * 4 + 3] as f64 * (1.0 - blur_ratio)).round() as u8;
-            }
-        }
-    }
-    */
 
     pub fn miniaturize(&mut self, sigma: f64, height: u32, is_top: bool) {
         let top_x = 0;

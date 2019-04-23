@@ -78,7 +78,7 @@ impl Image {
     }
 
     pub fn rotate_by(&mut self) { // rotate by a specified degree
-
+        // to be implemented
         self.last_operation = Operation::Transform
     }
 
