@@ -16,7 +16,7 @@ class Main extends Component {
     this.state = {
       selectedTool: null,
     };
-    this.imgSrc = '/image-editor/img/endgame.jpg'
+    this.imgSrc = '/img/endgame.jpg'
   }
 
   onSelectTool = id => this.setState({selectedTool: id});

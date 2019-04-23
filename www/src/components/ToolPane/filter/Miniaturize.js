@@ -181,8 +181,8 @@ class Miniaturize extends Component {
             The following 2 images best represent this filtering result.
           </p>
           <ul style={{fontSize: '12px', paddingLeft: '12px', color: '#00B7FF'}} onClick={this.loadImage}>
-            <li className='clickable' id='/image-editor/img/stadium.jpg'>Stadium</li>
-            <li className='clickable' id='/image-editor/img/airport.jpg'>Airport</li>
+            <li className='clickable' id='/img/stadium.jpg'>Stadium</li>
+            <li className='clickable' id='/img/airport.jpg'>Airport</li>
           </ul>
         </div>
     )}

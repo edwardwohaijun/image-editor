@@ -1,24 +1,14 @@
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+//const CopyWebpackPlugin = require("copy-webpack-plugin");
 const path = require('path');
 
 module.exports = {
-  // entry: ["babel-polyfill", "./bootstrap.js"], // babel-polyfill is to make async/await work
-  entry: ["./bootstrap.js"],
+  entry: ["./bootstrap.js"], // babel-polyfill is to make async/await work
   output: {
     publicPath: '/image-editor',// deploy on server with http://localhost:8080/image-editor
-    path: path.resolve(__dirname, "public"),
-    filename: "bootstrap.js",
+    path: path.resolve(__dirname, "build"),
+    filename: "bundle.js",
   },
-  mode: "development",
-  devServer: {
-    contentBase: path.join(__dirname, 'public'),
-    host: 'localhost',
-    port: '8080',
-    inline: true,
-    compress: true,
-    open: true,
-    openPage: 'image-editor'
-  },
+  mode: "production",
   module: {
     rules: [
       {
@@ -54,7 +44,8 @@ module.exports = {
       }
     ]
   },
+
   plugins: [
-    new CopyWebpackPlugin(['index.html'])
+
   ],
 };
