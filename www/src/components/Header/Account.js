@@ -10,7 +10,7 @@ class Account extends Component {
     return (
         <div>
           {/*<span style={{color: '#FFF'}} ref={span => this.span = span} /> */}
-          <div>replace me with a Github icon</div>
+          <div>login/signup</div>
         </div>
     )}
 }
