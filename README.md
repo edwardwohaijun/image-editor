@@ -63,13 +63,12 @@ application/wasm         wasm
 * Miniaturize
 * Smoothen(Bilateral filter under the hood)
 
-https://github.com/edwardwohaijun/image-editor/blob/master/smoothing_effect.jpg
-
 Here is the image before/after applying the smoothing effect:
 ![smoothed Eddie Redmayne](https://raw.githubusercontent.com/edwardwohaijun/image-editor/master/smoothing_effect.jpg)
 
 There are two parameters controlling the smoothing result, when they both approach max value, it'll create a cartoonish feel, like this:
 ![cartoonish Gal Gadot](https://raw.githubusercontent.com/edwardwohaijun/image-editor/master/cartoonish_effect.jpg)
+
 Note: the implementation of Bilateral filter algorithm behind this effect is very low efficient,
 takes about +10s to finish.
 
