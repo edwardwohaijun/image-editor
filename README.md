@@ -1,6 +1,6 @@
 # Introduction
 This app is the result of my learning experience of Rust, WebAssembly and image processing
-(I have deployed it on my personal server, [go check it out](http://worksphere.cn/image-editor)), 
+(I have deployed it on my personal server, [go check it out (https://ewo.xyz/image-editor)](https://ewo.xyz/image-editor)), 
 but I am planning to make it a long-term project, and finally, turn it into a full-featured app.
 With the release of draft spec in 2017, WebAssembly seems to be a good fit for the technical requirement of this kind of app.
 
